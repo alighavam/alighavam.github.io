@@ -1,13 +1,12 @@
 body{
-    background-color: #f2f2f2;
+    background-color: #ffffff;
+    font-family: 'Source Sans Pro';
 }
 .top-menu{
     background-color: #4F2683;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    border-bottom-left-radius: 30px;
-    border-bottom-right-radius: 30px;
-    margin-bottom: 20px; 
+    padding-top: 10px;
+    padding-bottom: 10px;
+    margin-bottom: 20px; ;
 }
 .a-body{
     color: #000000;
@@ -18,43 +17,43 @@ body{
 }
 .a-menu{
     color: #e6e6e6;
+    margin-right: 5px;
+    margin-left: 5px;
 }
 .a-menu:hover{
     background-color: #999999;
     border-radius: 10px;
-    border-bottom-left-radius: 30px;
-    border-bottom-right-radius: 30px;
     color: black;
 }
-.menu-span{
-    color: aqua;
-}
+
 .div-cont{
-    border: 2px solid;
-    border-color: rgb(170, 170, 170);
-    border-radius: 5px;
-    /* box-shadow: 0 0 4px; */
+    border-radius: 10px;
     padding-bottom: 10px;
     padding-top: 10px;
-    background-color: rgb(250, 250, 250);
+    background-color: #ffff;
 }
 .hp-img{
     width: 300px;
 }
 .div-img{
-    margin-top: 33px; 
+    margin-top: 10px; 
     /* include margin if needed! */
 }
-.main-head{
-    border-bottom: solid 2px; 
-    border-color: rgb(169, 191, 203)
+.home-header-name{
+    font-weight: bold ; 
+    color: #4F2683 ;
+    font-size: 30px;
 }
 .main-p{
     font-size: 17px;
     text-align: justify;
-    margin-top: 25px;
-    margin-bottom: 50px;
+    margin-bottom: 15px;
     color: #000000;
+}
+.home-about-head{
+    color: #4F2683;
+    font-size: 30px;
+    font-weight: bold;
 }
 .about-p{
     text-align: justify;
