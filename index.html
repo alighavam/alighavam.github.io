@@ -7,7 +7,7 @@
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <!-- Animation Library (AOS) -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -17,15 +17,15 @@
 </head>
 <body>
 
-    <!-- Background Mist (Subtler "Liquid" Effect) -->
+    <!-- Background Mist (Subtle Texture) -->
     <div class="liquid-background">
         <div class="mist mist-1"></div>
         <div class="mist mist-2"></div>
     </div>
 
-    <!-- Glass Navigation -->
+    <!-- Glass Navigation (Apple Style) -->
     <nav class="glass-nav">
-        <div class="nav-logo">NeuroRes</div>
+        <div class="nav-logo">Firstname Lastname</div>
         <ul class="nav-links">
             <li><a href="#home">Home</a></li>
             <li><a href="#projects">Projects</a></li>
@@ -51,15 +51,32 @@
         </button>
     </nav>
 
-    <!-- HOME SECTION -->
+    <!-- ACADEMIC HERO SECTION -->
     <section id="home" class="hero-section">
-        <div class="hero-content" data-aos="fade-up">
-            <h1>Exploring the <span class="highlight">Neural Mechanisms</span> of Movement</h1>
-            <p class="subtitle">PhD Candidate & Researcher | fMRI Analysis | Motor Control</p>
-            <div class="hero-buttons">
-                <a href="#projects" class="btn-liquid">View Projects</a>
-                <a href="#about" class="btn-glass">Contact Me</a>
+        <div class="hero-container glass-panel" data-aos="fade-up">
+            
+            <!-- Profile Image -->
+            <div class="hero-image">
+                <!-- Replace with your actual photo -->
+                <img src="./resources/myphoto.jpg" alt="Researcher Portrait">
             </div>
+
+            <!-- Intro Text -->
+            <div class="hero-text">
+                <h1>Hi, I'm <span class="highlight">Firstname Lastname</span>.</h1>
+                <p class="intro-lead">
+                    PhD Student in Neuroscience at Western University.
+                </p>
+                <p class="intro-bio">
+                    I study the neural mechanisms of motor control using fMRI and computational modeling. My research focuses on how the brain plans and executes complex hand movements.
+                </p>
+                <div class="hero-links">
+                    <a href="#publications" class="link-text">View Publications →</a>
+                    <a href="#projects" class="link-text">See Projects →</a>
+                    <a href="mailto:email@example.com" class="link-text">Get in Touch →</a>
+                </div>
+            </div>
+
         </div>
     </section>
 
@@ -116,8 +133,8 @@
                 <span class="year">2025</span>
                 <div class="pub-details">
                     <h4>Neural correlates of finger force control</h4>
-                    <p>Journal of Neuroscience • <i>Author Name, et al.</i></p>
-                    <a href="#" class="link-small">Read Paper →</a>
+                    <p>Journal of Neuroscience • <i>Lastname, F., Supervisor, A.</i></p>
+                    <a href="#" class="link-small">Read Paper</a>
                 </div>
             </div>
 
@@ -125,37 +142,34 @@
                 <span class="year">2024</span>
                 <div class="pub-details">
                     <h4>Optimizing GLMsingle for rapid event-related fMRI</h4>
-                    <p>NeuroImage • <i>Author Name, Lab Partner, PI Name</i></p>
-                    <a href="#" class="link-small">Read Paper →</a>
+                    <p>NeuroImage • <i>Lastname, F., Colleague, B., PI Name</i></p>
+                    <a href="#" class="link-small">Read Paper</a>
                 </div>
             </div>
 
         </div>
     </section>
 
-    <!-- ABOUT SECTION -->
+    <!-- SHORT BIO / CONTACT -->
     <section id="about" class="section-pad">
-        <div class="about-container glass-panel" data-aos="zoom-in">
-            <div class="about-text">
-                <h2>About Me</h2>
-                <p>I am a graduate researcher based in Canada, specializing in motor neuroscience. My work combines computational modeling with neuroimaging to understand how the brain controls complex hand movements.</p>
-                <p>When I'm not in the lab analyzing fMRI data, you can find me playing guitar, taking photos, or experimenting with new recipes.</p>
-                
-                <div class="social-links">
-                    <a href="#" class="social-btn">GitHub</a>
-                    <a href="#" class="social-btn">LinkedIn</a>
-                    <a href="#" class="social-btn">Email</a>
-                </div>
-            </div>
-            <div class="about-image">
-                <!-- Replace src with your actual photo path -->
-                <img src="https://placehold.co/400x400/222/fff?text=Profile+Photo" alt="Profile Photo">
+        <div class="glass-panel about-mini" data-aos="zoom-in">
+            <h3>About Me</h3>
+            <p>
+                I am currently managing laboratory operations while conducting my doctoral research. 
+                My background bridges electrical engineering and neuroscience, allowing me to develop custom experimental hardware and analysis tools.
+                Outside the lab, I enjoy guitar, photography, and cooking.
+            </p>
+            <div class="social-links-row">
+                <a href="#" class="social-pill">Google Scholar</a>
+                <a href="#" class="social-pill">GitHub</a>
+                <a href="#" class="social-pill">Twitter/X</a>
+                <a href="#" class="social-pill">LinkedIn</a>
             </div>
         </div>
     </section>
 
     <footer>
-        <p>© 2025 Researcher Name. Built with Liquid Glass.</p>
+        <p>© 2025 Firstname Lastname.</p>
     </footer>
 
     <!-- Scripts -->
