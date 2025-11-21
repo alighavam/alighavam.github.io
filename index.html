@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Researcher Portfolio</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Animation Library (AOS) -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Background Mist (Subtler "Liquid" Effect) -->
+    <div class="liquid-background">
+        <div class="mist mist-1"></div>
+        <div class="mist mist-2"></div>
+    </div>
+
+    <!-- Glass Navigation -->
+    <nav class="glass-nav">
+        <div class="nav-logo">NeuroRes</div>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#projects">Projects</a></li>
+            <li><a href="#publications">Publications</a></li>
+            <li><a href="#about">About</a></li>
+        </ul>
+        <!-- THEME TOGGLE BUTTON -->
+        <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme">
+            <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg class="moon-icon hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        </button>
+    </nav>
+
+    <!-- HOME SECTION -->
+    <section id="home" class="hero-section">
+        <div class="hero-content" data-aos="fade-up">
+            <h1>Exploring the <span class="highlight">Neural Mechanisms</span> of Movement</h1>
+            <p class="subtitle">PhD Candidate & Researcher | fMRI Analysis | Motor Control</p>
+            <div class="hero-buttons">
+                <a href="#projects" class="btn-liquid">View Projects</a>
+                <a href="#about" class="btn-glass">Contact Me</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- PROJECTS SECTION -->
+    <section id="projects" class="section-pad">
+        <h2 class="section-title" data-aos="fade-right">Projects</h2>
+        <div class="grid-container">
+            
+            <!-- Project Card 1 -->
+            <div class="glass-card" data-aos="fade-up" data-aos-delay="100">
+                <div class="card-image gradient-1"></div>
+                <div class="card-content">
+                    <h3>Ergonomic Device Design</h3>
+                    <p>Custom hardware development for hand/finger force measurement using Arduino and C++.</p>
+                    <div class="tags">
+                        <span>C++</span><span>Arduino</span><span>Hardware</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Card 2 -->
+            <div class="glass-card" data-aos="fade-up" data-aos-delay="200">
+                <div class="card-image gradient-2"></div>
+                <div class="card-content">
+                    <h3>fMRI Analysis Pipeline</h3>
+                    <p>Automated preprocessing and GLM analysis scripts using Python and MATLAB.</p>
+                    <div class="tags">
+                        <span>Python</span><span>MATLAB</span><span>Neuroimaging</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Card 3 -->
+            <div class="glass-card" data-aos="fade-up" data-aos-delay="300">
+                <div class="card-image gradient-3"></div>
+                <div class="card-content">
+                    <h3>Motor Learning Study</h3>
+                    <p>Investigating dorsal vs. ventral stream contributions to fine motor skills.</p>
+                    <div class="tags">
+                        <span>Research</span><span>Statistics</span><span>SciPy</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- PUBLICATIONS SECTION -->
+    <section id="publications" class="section-pad">
+        <h2 class="section-title" data-aos="fade-right">Selected Publications</h2>
+        <div class="pub-list">
+            
+            <div class="glass-item" data-aos="fade-left">
+                <span class="year">2025</span>
+                <div class="pub-details">
+                    <h4>Neural correlates of finger force control</h4>
+                    <p>Journal of Neuroscience • <i>Author Name, et al.</i></p>
+                    <a href="#" class="link-small">Read Paper →</a>
+                </div>
+            </div>
+
+            <div class="glass-item" data-aos="fade-left" data-aos-delay="100">
+                <span class="year">2024</span>
+                <div class="pub-details">
+                    <h4>Optimizing GLMsingle for rapid event-related fMRI</h4>
+                    <p>NeuroImage • <i>Author Name, Lab Partner, PI Name</i></p>
+                    <a href="#" class="link-small">Read Paper →</a>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ABOUT SECTION -->
+    <section id="about" class="section-pad">
+        <div class="about-container glass-panel" data-aos="zoom-in">
+            <div class="about-text">
+                <h2>About Me</h2>
+                <p>I am a graduate researcher based in Canada, specializing in motor neuroscience. My work combines computational modeling with neuroimaging to understand how the brain controls complex hand movements.</p>
+                <p>When I'm not in the lab analyzing fMRI data, you can find me playing guitar, taking photos, or experimenting with new recipes.</p>
+                
+                <div class="social-links">
+                    <a href="#" class="social-btn">GitHub</a>
+                    <a href="#" class="social-btn">LinkedIn</a>
+                    <a href="#" class="social-btn">Email</a>
+                </div>
+            </div>
+            <div class="about-image">
+                <!-- Replace src with your actual photo path -->
+                <img src="https://placehold.co/400x400/222/fff?text=Profile+Photo" alt="Profile Photo">
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>© 2025 Researcher Name. Built with Liquid Glass.</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+
