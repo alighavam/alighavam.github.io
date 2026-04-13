@@ -180,6 +180,15 @@ section { padding: 100px 20px; }
 .card-content { padding: 25px; }
 .card-content h3 { font-size: 1.1rem; margin-bottom: 8px; }
 .card-content p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px; }
+.card-content a,
+.card-content a:visited {
+    color: #ffffff;
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent-2);
+}
+.card-content a:hover {
+    text-shadow: 0 0 10px var(--accent-glow);
+}
 .tags span { font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; background: rgba(255,255,255,0.08); margin-right: 5px; color: var(--text-muted); }
 
 /* --- PUBLICATIONS --- */
@@ -249,6 +258,18 @@ body.light-mode .card-image { opacity: 1; }
 body.light-mode .card-image.gradient-1 { background: linear-gradient(135deg, #e9d5ff, #f3f4f6); }
 body.light-mode .card-image.gradient-2 { background: linear-gradient(135deg, #cffafe, #f3f4f6); }
 body.light-mode .card-image.gradient-3 { background: linear-gradient(135deg, #fce7f3, #f3f4f6); }
+
+body.light-mode .card-content a,
+body.light-mode .card-content a:visited {
+    color: var(--accent-2);
+}
+
+body.light-mode .link-small,
+body.light-mode .link-small:visited {
+    color: var(--accent-2);
+    opacity: 1;
+    border-bottom-color: rgba(99, 102, 241, 0.5);
+}
 
 /* --- MOBILE --- */
 @media (max-width: 768px) {
