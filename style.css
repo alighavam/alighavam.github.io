@@ -93,8 +93,12 @@ body {
 .nav-links a:hover { color: white; text-shadow: 0 0 10px var(--accent-glow); }
 
 /* Theme Toggle */
+.nav-actions { display: flex; align-items: center; gap: 8px; }
 .theme-btn { background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; width: 32px; height: 32px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+a.theme-btn { text-decoration: none; }
 .theme-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+.cam-peek { opacity: 0.55; }
+.cam-peek:hover { opacity: 1; text-shadow: 0 0 10px var(--accent-glow); }
 .hidden { display: none; }
 
 /* --- HERO SECTION --- */
@@ -221,35 +225,6 @@ section { padding: 100px 20px; }
 .social-pill:hover { border-color: var(--accent-1); color: white; background: var(--accent-1); box-shadow: 0 0 15px var(--accent-glow); }
 
 footer { text-align: center; padding: 60px; color: var(--text-muted); font-size: 0.85rem; opacity: 0.5; }
-
-.cam-peek {
-    position: fixed;
-    bottom: 18px;
-    right: 18px;
-    z-index: 900;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    border: 1px solid transparent;
-    color: var(--text-muted);
-    opacity: 0.2;
-    text-decoration: none;
-    transition: opacity 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
-}
-
-.cam-peek:hover {
-    opacity: 0.55;
-    color: var(--text-main);
-    border-color: var(--glass-border);
-    box-shadow: 0 0 12px var(--accent-glow);
-}
-
-body.light-mode .cam-peek:hover {
-    color: var(--accent-2);
-}
 
 /* --- LIGHT MODE (Crisp & Airy) --- */
 body.light-mode {
