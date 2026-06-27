@@ -93,12 +93,8 @@ body {
 .nav-links a:hover { color: white; text-shadow: 0 0 10px var(--accent-glow); }
 
 /* Theme Toggle */
-.nav-actions { display: flex; align-items: center; gap: 8px; }
 .theme-btn { background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; width: 32px; height: 32px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-a.theme-btn { text-decoration: none; }
 .theme-btn:hover { background: rgba(255,255,255,0.1); color: white; }
-.cam-peek { opacity: 0.55; }
-.cam-peek:hover { opacity: 1; text-shadow: 0 0 10px var(--accent-glow); }
 .hidden { display: none; }
 
 /* --- HERO SECTION --- */
@@ -224,7 +220,43 @@ section { padding: 100px 20px; }
 }
 .social-pill:hover { border-color: var(--accent-1); color: white; background: var(--accent-1); box-shadow: 0 0 15px var(--accent-glow); }
 
-footer { text-align: center; padding: 60px; color: var(--text-muted); font-size: 0.85rem; opacity: 0.5; }
+footer {
+    position: relative;
+    text-align: center;
+    padding: 60px 20px 72px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    opacity: 0.5;
+}
+
+.cam-whisper {
+    position: absolute;
+    right: clamp(16px, 4vw, 48px);
+    bottom: 28px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.01);
+    opacity: 0.25;
+    text-decoration: none;
+    transition: opacity 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+.cam-whisper:hover {
+    opacity: 0.65;
+    border-color: rgba(139, 92, 246, 0.35);
+    box-shadow: 0 0 18px rgba(139, 92, 246, 0.2);
+}
+
+body.light-mode .cam-whisper {
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+body.light-mode .cam-whisper:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 16px rgba(99, 102, 241, 0.15);
+}
 
 /* --- LIGHT MODE (Crisp & Airy) --- */
 body.light-mode {
