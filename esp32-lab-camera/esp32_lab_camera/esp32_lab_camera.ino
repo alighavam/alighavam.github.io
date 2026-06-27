@@ -123,6 +123,27 @@ static esp_err_t streamHandler(httpd_req_t* req) {
   return res;
 }
 
+static esp_err_t frameHandler(httpd_req_t* req) {
+  if (!tokenValid(req)) {
+    return sendUnauthorized(req);
+  }
+
+  camera_fb_t* fb = esp_camera_fb_get();
+  if (!fb) {
+    Serial.println("Camera capture failed");
+    httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Capture failed");
+    return ESP_FAIL;
+  }
+
+  httpd_resp_set_type(req, "image/jpeg");
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+  httpd_resp_set_hdr(req, "Cache-Control", "no-store, no-cache, must-revalidate");
+
+  esp_err_t res = httpd_resp_send(req, (const char*)fb->buf, fb->len);
+  esp_camera_fb_return(fb);
+  return res;
+}
+
 static void startStreamServer() {
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   config.server_port = 80;
@@ -144,9 +165,17 @@ static void startStreamServer() {
     .user_ctx = NULL
   };
 
+  httpd_uri_t frameUri = {
+    .uri = "/frame",
+    .method = HTTP_GET,
+    .handler = frameHandler,
+    .user_ctx = NULL
+  };
+
   if (httpd_start(&streamHttpd, &config) == ESP_OK) {
     httpd_register_uri_handler(streamHttpd, &indexUri);
     httpd_register_uri_handler(streamHttpd, &streamUri);
+    httpd_register_uri_handler(streamHttpd, &frameUri);
     Serial.println("HTTP server started on port 80");
   } else {
     Serial.println("Failed to start HTTP server");

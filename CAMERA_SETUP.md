@@ -207,60 +207,32 @@ Ask IT for a **DHCP reservation** for the ESP32 MAC address, or update `config.y
 
 ---
 
-## Part 3 — Website viewer page
+## Part 3 — Secure viewer (Cloudflare Worker)
 
-### 3.1 Create config
+**Do not put passwords or stream tokens on GitHub.** The viewer and password check run on Cloudflare's edge.
 
-```bash
-cp camera-config.example.js camera-config.js
-```
-
-Edit `camera-config.js`:
-
-```javascript
-window.CAMERA_CONFIG = {
-  streamBaseUrl: 'https://cam.yourdomain.com',
-  streamToken: 'same-as-STREAM_TOKEN-in-secrets.h',
-  viewerPasswordHash: 'sha256-hex-of-friend-password'
-};
-```
-
-### 3.2 Generate viewer password hash
-
-Open any browser console and run:
-
-```javascript
-async function hash(pw) {
-  const data = new TextEncoder().encode(pw);
-  const buf = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-hash('your-friend-password').then(console.log);
-```
-
-Paste the hex string into `viewerPasswordHash`.
-
-### 3.3 Deploy to GitHub Pages
-
-`camera-config.js` contains secrets and is gitignored. To deploy it:
+See **`cloudflare/worker/README.md`** for full steps. Summary:
 
 ```bash
-git add camera.html camera.css camera.js camera-config.example.js
-git add -f camera-config.js   # force-add secrets file for GitHub Pages
-git commit -m "Add lab camera viewer"
-git push
+npm install -g wrangler
+wrangler login
+cd cloudflare/worker
+wrangler secret put VIEWER_PASSWORD
+wrangler secret put STREAM_TOKEN
+wrangler secret put INTERNAL_SECRET
+wrangler deploy
 ```
-
-Viewer URL: `https://alighavam.github.io/camera.html`
 
 Share with friends:
 
-- Page URL: `https://alighavam.github.io/camera.html`
-- Viewer password: (the plain text you hashed)
+- URL: `https://cam.alighavam.com`
+- Password: the `VIEWER_PASSWORD` you set in Wrangler
 
-### 3.4 Optional: custom domain
+`camera.html` on GitHub only redirects to that URL — no secrets in the repo.
 
-If your portfolio uses a custom domain, the camera page is at `https://yourdomain.com/camera.html`.
+### Rotate your stream token
+
+If the old token was ever committed or shared, generate a new one (`openssl rand -hex 32`), update `secrets.h`, re-flash the ESP32, then `wrangler secret put STREAM_TOKEN`.
 
 ---
 
@@ -270,10 +242,11 @@ If your portfolio uses a custom domain, the camera page is at `https://yourdomai
 |------|-------|
 | ESP32 Serial Monitor | WiFi connected + IP printed |
 | Same WiFi | `http://ESP32_IP/stream?token=...` works |
-| Cloudflare | `https://cam.yourdomain.com/stream?token=...` works |
-| GitHub Pages | `camera.html` loads, password works |
-| Phone on cellular | Stream works away from lab WiFi |
-| Friend test | They can log in with shared password |
+| Tunnel running | `cloudflared tunnel list` shows connections |
+| Worker deployed | `https://cam.alighavam.com` shows login |
+| Incognito `/stream` | **401** without logging in |
+| After login | Live stream on phone (cellular) |
+| GitHub | No `camera-config.js` with secrets in repo |
 
 ---
 
@@ -286,19 +259,24 @@ If your portfolio uses a custom domain, the camera page is at `https://yourdomai
 | WiFi failed | Check SSID/password; confirm university allows IoT devices |
 | Upload timeout | Lower upload speed; press RST; check CH340 driver |
 | Stream works locally, not via Cloudflare | Tunnel not running; wrong ESP32 IP in config |
-| Page loads, stream blank | Token mismatch between `secrets.h` and `camera-config.js` |
+| Login works, stream blank | `STREAM_TOKEN` mismatch between ESP32 and Worker secret |
 | HTTPS page, no stream | Stream URL must be `https://` (Cloudflare), not `http://` |
 | Choppy video | Normal with multiple viewers; ESP32 limits ~2–3 simultaneous streams |
 
 ---
 
-## Security (honest summary)
+## Security
 
-- **Viewer password** on GitHub Pages is checked in the browser — determined users can find the stream URL in dev tools after logging in.
-- **Stream token** blocks random internet scanners from opening `/stream`.
-- For stronger security, add **Cloudflare Access** on `cam.yourdomain.com` (email OTP or identity provider).
+| Layer | What it does |
+|-------|----------------|
+| **Cloudflare Worker** | Password checked server-side; stream token never sent to browser |
+| **HttpOnly cookie** | Session after login; `/stream` returns 401 without it |
+| **ESP32 token** | Second layer — Worker adds token when proxying to ESP32 |
+| **GitHub** | No secrets — `camera.html` is redirect only |
 
-This setup is appropriate for casual sharing with friends, not high-security surveillance.
+**Cloudflare dashboard login** (your account at cloudflare.com) is only for **you** managing DNS/tunnels. Random people cannot log into your Cloudflare account and see the stream.
+
+**Cloudflare Access** (optional, stronger): email allowlist + one-time PIN per visitor — see `cloudflare/worker/README.md` if you want that later.
 
 ---
 
@@ -306,13 +284,14 @@ This setup is appropriate for casual sharing with friends, not high-security sur
 
 ```
 esp32-lab-camera/
-  esp32_lab_camera.ino    # Flash this to ESP32
-  esp32_lab_camera/secrets.h   # Next to .ino file (gitignored)
-  secrets.h.example            # Copy → esp32_lab_camera/secrets.h
-camera.html               # Password-protected viewer
-camera.css / camera.js
-camera-config.example.js  # Copy → camera-config.js
+  esp32_lab_camera/esp32_lab_camera.ino
+  esp32_lab_camera/secrets.h          # gitignored
+camera.html                           # redirects to cam.alighavam.com
 cloudflare/
+  worker/worker.js                    # password gate (deploy with wrangler)
+  worker/wrangler.toml
+  worker/README.md
   tunnel-config.example.yml
   run-tunnel.sh
+  verify-setup.sh
 ```

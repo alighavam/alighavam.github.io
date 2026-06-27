@@ -1,0 +1,10 @@
+name = "lab-camera-auth"
+main = "worker.js"
+compatibility_date = "2024-06-01"
+
+# Set your Cloudflare account ID: wrangler whoami
+# account_id = "your-account-id"
+
+routes = [
+  { pattern = "cam.alighavam.com/*", zone_name = "alighavam.com" }
+]
