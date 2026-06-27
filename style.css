@@ -222,6 +222,35 @@ section { padding: 100px 20px; }
 
 footer { text-align: center; padding: 60px; color: var(--text-muted); font-size: 0.85rem; opacity: 0.5; }
 
+.cam-peek {
+    position: fixed;
+    bottom: 18px;
+    right: 18px;
+    z-index: 900;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    opacity: 0.2;
+    text-decoration: none;
+    transition: opacity 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.cam-peek:hover {
+    opacity: 0.55;
+    color: var(--text-main);
+    border-color: var(--glass-border);
+    box-shadow: 0 0 12px var(--accent-glow);
+}
+
+body.light-mode .cam-peek:hover {
+    color: var(--accent-2);
+}
+
 /* --- LIGHT MODE (Crisp & Airy) --- */
 body.light-mode {
     --bg-color: #f8fafc;
