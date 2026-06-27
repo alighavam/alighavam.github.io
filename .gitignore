@@ -4,7 +4,9 @@ _site
 .jekyll-metadata
 vendor
 .DS_Store
-.DS_Store
-.DS_Store
-.DS_Store
-.DS_Store
+
+# Lab camera secrets (deploy with: git add -f camera-config.js)
+camera-config.js
+esp32-lab-camera/secrets.h
+esp32-lab-camera/esp32_lab_camera/secrets.h
+cloudflare/*.json

@@ -1,0 +1,127 @@
+.camera-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 120px 20px 60px;
+}
+
+.camera-shell {
+    width: 100%;
+    max-width: 960px;
+    padding: 32px;
+    border-radius: 24px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+.camera-shell h1 {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+}
+
+.camera-subtitle {
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    font-size: 0.95rem;
+}
+
+.camera-login label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.camera-login input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-main);
+    font-size: 1rem;
+    margin-bottom: 16px;
+}
+
+.camera-login input:focus {
+    outline: none;
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.camera-error {
+    color: #f87171;
+    font-size: 0.9rem;
+    min-height: 1.2rem;
+    margin-bottom: 12px;
+}
+
+.camera-viewer {
+    display: none;
+}
+
+.camera-viewer.is-active {
+    display: block;
+}
+
+.stream-frame {
+    width: 100%;
+    border-radius: 16px;
+    border: 1px solid var(--glass-border);
+    background: #000;
+    aspect-ratio: 4 / 3;
+    object-fit: contain;
+}
+
+.stream-status {
+    margin-top: 12px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.stream-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.stream-actions button,
+.camera-login button {
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: 0.2s;
+}
+
+.stream-actions button:hover,
+.camera-login button:hover {
+    border-color: transparent;
+    box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.camera-login button {
+    width: 100%;
+}
+
+body.light-mode .camera-login input {
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--text-main);
+}
+
+@media (max-width: 768px) {
+    .camera-shell {
+        padding: 24px 18px;
+    }
+
+    .camera-shell h1 {
+        font-size: 1.5rem;
+    }
+}
