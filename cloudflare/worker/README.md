@@ -26,6 +26,11 @@ wrangler secret put STREAM_TOKEN
 
 # Random string — prevents worker auth loop (openssl rand -hex 32)
 wrangler secret put INTERNAL_SECRET
+
+# Print watcher Telegram relay (see cloudflare/print-watcher/README.md)
+wrangler secret put TELEGRAM_BOT_TOKEN
+wrangler secret put TELEGRAM_CHAT_ID
+# Optional: wrangler secret put TELEGRAM_WEBHOOK_SECRET
 ```
 
 Wrangler prompts for each value interactively. Nothing is stored in this repo.

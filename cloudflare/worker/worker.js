@@ -1,7 +1,10 @@
 /**
  * Password gate for cam.alighavam.com — runs on Cloudflare's edge.
- * Secrets (never in GitHub): VIEWER_PASSWORD, STREAM_TOKEN, INTERNAL_SECRET
+ * Secrets (never in GitHub): VIEWER_PASSWORD, STREAM_TOKEN, INTERNAL_SECRET,
+ *   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID (print watcher relay)
  */
+
+import { handleWatcherRoute } from './watcher-telegram.js';
 
 const COOKIE_NAME = 'lab_cam_session';
 const SESSION_DAYS = 7;
@@ -24,6 +27,11 @@ export default {
         return new Response('Unauthorized', { status: 401 });
       }
       return getViewerCount(request, env);
+    }
+
+    const watcherResponse = await handleWatcherRoute(request, env, url);
+    if (watcherResponse) {
+      return watcherResponse;
     }
 
     if (url.pathname === '/auth' && request.method === 'POST') {

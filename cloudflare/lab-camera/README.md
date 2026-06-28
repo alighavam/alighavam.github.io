@@ -10,7 +10,8 @@ Starts in the background (safe to close the window after):
 
 1. **go2rtc** — pulls one stream from the ESP32  
 2. **Caddy** — proxy on `127.0.0.1:8080`  
-3. **cloudflared** — tunnel to `https://cam.alighavam.com`
+3. **cloudflared** — tunnel to `https://cam.alighavam.com`  
+4. **print-watcher** — motion detection + Telegram alerts (if configured)
 
 ## Stop
 
@@ -23,6 +24,7 @@ Double-click **`Stop Lab Camera.command`**
   go2rtc.log
   caddy.log
   cloudflared.log
+  print-watcher.log
 ```
 
 ## First-time setup on Mac

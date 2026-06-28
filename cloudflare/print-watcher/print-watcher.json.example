@@ -1,0 +1,16 @@
+{
+  "go2rtc_base_url": "http://127.0.0.1:1984",
+  "go2rtc_stream": "lab_cam",
+
+  "worker_url": "https://cam.alighavam.com",
+  "internal_secret": "SAME_VALUE_AS_WRANGLER_INTERNAL_SECRET",
+
+  "motion_threshold": 3.5,
+  "burst_frames": 5,
+  "burst_interval_sec": 1.0,
+  "schedule_interval_minutes": 30,
+  "worker_poll_interval_sec": 5,
+
+  "frame_width": 160,
+  "frame_height": 120
+}

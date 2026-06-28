@@ -8,3 +8,11 @@ compatibility_date = "2024-06-01"
 routes = [
   { pattern = "cam.alighavam.com/*", zone_name = "alighavam.com" }
 ]
+
+# Create once: wrangler kv namespace create WATCHER_KV
+# Paste the returned id below, then wrangler deploy
+[[kv_namespaces]]
+binding = "WATCHER_KV"
+id = "842f6030a48c4e1b8ac472230ec95744"
+
+4accd826a17f066aefd10ade3c7d89b12dee5b5a261a7195bcd243ed393d3480

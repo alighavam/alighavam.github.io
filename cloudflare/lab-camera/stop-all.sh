@@ -34,6 +34,7 @@ echo ""
 stop_one go2rtc
 stop_one caddy
 stop_one cloudflared
+stop_one print-watcher
 
 echo ""
 echo "Done."

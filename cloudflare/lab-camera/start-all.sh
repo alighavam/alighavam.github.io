@@ -9,6 +9,9 @@ STATE_DIR="${HOME}/Library/Application Support/lab-camera"
 LOG_DIR="${HOME}/Library/Logs/lab-camera"
 GO2RTC_CONFIG="${HOME}/.config/go2rtc/go2rtc.yaml"
 TUNNEL_CONFIG="${HOME}/.cloudflared/config.yml"
+WATCHER_CONFIG="${HOME}/.config/lab-camera/print-watcher.json"
+WATCHER_SCRIPT="${SCRIPT_DIR}/../print-watcher/print_watcher.py"
+
 CADDYFILE="${SCRIPT_DIR}/../go2rtc/Caddyfile"
 
 mkdir -p "$STATE_DIR" "$LOG_DIR"
@@ -98,6 +101,16 @@ start_service go2rtc go2rtc -config "$GO2RTC_CONFIG" || fail=1
 start_service caddy caddy run --config "$CADDYFILE" || fail=1
 start_service cloudflared cloudflared tunnel --config "$TUNNEL_CONFIG" run || fail=1
 
+if [[ -f "$WATCHER_CONFIG" ]] && [[ -f "$WATCHER_SCRIPT" ]]; then
+  if python3 -c "import PIL, requests" 2>/dev/null; then
+    start_service print-watcher python3 "$WATCHER_SCRIPT" "$WATCHER_CONFIG" || yellow "print-watcher failed (see log)"
+  else
+    yellow "print-watcher skipped — run: pip3 install -r cloudflare/print-watcher/requirements.txt"
+  fi
+else
+  yellow "print-watcher skipped — copy cloudflare/print-watcher/print-watcher.json.example to $WATCHER_CONFIG"
+fi
+
 echo ""
 if [[ "$fail" -ne 0 ]]; then
   red "Some services failed. Logs: $LOG_DIR"
@@ -108,6 +121,7 @@ green "All services running."
 echo ""
 echo "  Local hub:   http://127.0.0.1:8080/stream"
 echo "  Public site: https://cam.alighavam.com/"
+echo "  Print bot:   Telegram /check (see cloudflare/print-watcher/README.md)"
 echo "  Logs:        $LOG_DIR"
 echo ""
 echo "To stop: double-click \"Stop Lab Camera.command\""
