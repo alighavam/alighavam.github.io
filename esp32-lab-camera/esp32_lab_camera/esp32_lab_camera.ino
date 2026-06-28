@@ -44,7 +44,7 @@ static bool tokenValid(httpd_req_t* req) {
     return false;
   }
 
-  char token[64];
+  char token[128];
   if (httpd_query_key_value(query, "token", token, sizeof(token)) != ESP_OK) {
     return false;
   }
@@ -279,7 +279,12 @@ static void connectWiFi() {
   scanNearbyNetworks();
 
   Serial.printf("Connecting to %s ...\n", WIFI_SSID);
+#if WIFI_USE_ENTERPRISE
+  Serial.println("Using WPA2-Enterprise (PEAP, no CA cert)");
+  WiFi.begin(WIFI_SSID, WPA2_AUTH_PEAP, EAP_IDENTITY, EAP_USERNAME, EAP_PASSWORD);
+#else
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+#endif
 
   uint8_t attempts = 0;
   while (WiFi.status() != WL_CONNECTED && attempts < 60) {

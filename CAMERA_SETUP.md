@@ -17,19 +17,16 @@ GitHub Pages          →  camera.html (password gate)  →  embeds stream in br
 
 ---
 
-## Your board (confirmed)
-
-From your Amazon listing ([B0FLPMGHLR](https://www.amazon.ca/dp/B0FLPMGHLR)):
-
+## board
 | Item | Value |
 |------|-------|
 | Module | ESP32-CAM-MB (camera slots into programmer board) |
 | Camera | OV2640 |
 | USB chip | CH340C (use the **MB board** micro-USB port) |
 | Pinout | **AI-Thinker** (standard ESP32-CAM) |
-| Antenna | External IPEX (good for university WiFi) |
+| Antenna | External IPEX |
 
-You do **not** need an SD card for this project.
+No SD card for this project.
 
 ---
 
