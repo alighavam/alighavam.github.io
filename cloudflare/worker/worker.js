@@ -6,13 +6,24 @@
 const COOKIE_NAME = 'lab_cam_session';
 const SESSION_DAYS = 7;
 const CAMERA_PATHS = new Set(['/stream', '/frame']);
+const GO2RTC_STREAM = 'lab_cam';
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
     if (request.headers.get('X-Internal-Stream') === env.INTERNAL_SECRET) {
+      if (url.pathname.startsWith('/api/')) {
+        return fetchOrigin(request);
+      }
       return forwardToCamera(request, env);
+    }
+
+    if (url.pathname === '/api/viewers' && request.method === 'GET') {
+      if (!(await hasValidSession(request, env))) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      return getViewerCount(request, env);
     }
 
     if (url.pathname === '/auth' && request.method === 'POST') {
@@ -40,6 +51,40 @@ export default {
     return new Response('Not found', { status: 404 });
   },
 };
+
+function fetchOrigin(request) {
+  const headers = new Headers(request.headers);
+  headers.delete('X-Internal-Stream');
+  return fetch(new Request(request.url, { method: request.method, headers }));
+}
+
+async function getViewerCount(request, env) {
+  const originUrl = new URL(request.url);
+  originUrl.pathname = '/api/streams';
+  originUrl.search = '';
+
+  const resp = await fetch(originUrl.toString(), {
+    headers: {
+      Accept: 'application/json',
+      'X-Internal-Stream': env.INTERNAL_SECRET,
+    },
+  });
+
+  if (!resp.ok) {
+    return Response.json({ count: null });
+  }
+
+  let data;
+  try {
+    data = await resp.json();
+  } catch {
+    return Response.json({ count: null });
+  }
+
+  const stream = data[GO2RTC_STREAM];
+  const count = Array.isArray(stream?.consumers) ? stream.consumers.length : 0;
+  return Response.json({ count }, { headers: { 'Cache-Control': 'no-store' } });
+}
 
 async function forwardToCamera(request, env) {
   const url = new URL(request.url);
@@ -285,15 +330,49 @@ function viewerPage() {
     const status = document.getElementById('status');
     const isMobile = /iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent);
     let pollTimer = null;
+    let viewerPollTimer = null;
     let failCount = 0;
+    let streamLive = false;
+    let viewerCount = null;
+
+    function formatStatus() {
+      if (!streamLive) {
+        return isMobile ? 'Connecting (mobile)...' : 'Connecting...';
+      }
+      if (viewerCount === null) {
+        return 'Live';
+      }
+      return 'Live — ' + viewerCount + (viewerCount === 1 ? ' watching' : ' watching');
+    }
+
+    function refreshStatus() {
+      status.textContent = formatStatus();
+    }
+
+    async function pollViewers() {
+      try {
+        const r = await fetch('/api/viewers');
+        if (!r.ok) {
+          return;
+        }
+        const data = await r.json();
+        if (typeof data.count === 'number') {
+          viewerCount = data.count;
+          refreshStatus();
+        }
+      } catch (_) {}
+    }
 
     img.onload = () => {
       failCount = 0;
-      status.textContent = isMobile ? 'Live (mobile)' : 'Live';
+      streamLive = true;
+      refreshStatus();
+      pollViewers();
     };
     img.onerror = () => {
       failCount += 1;
       if (failCount >= 3) {
+        streamLive = false;
         status.textContent = 'Stream unavailable — check ESP32 and tunnel.';
       }
     };
@@ -318,6 +397,8 @@ function viewerPage() {
     }
 
     function reloadStream() {
+      streamLive = false;
+      viewerCount = null;
       status.textContent = 'Reconnecting...';
       failCount = 0;
       if (isMobile) {
@@ -333,12 +414,14 @@ function viewerPage() {
       }
     });
 
+    viewerPollTimer = setInterval(pollViewers, 5000);
+
     if (isMobile) {
-      status.textContent = 'Connecting (mobile mode)...';
       startFramePoll();
     } else {
       startMjpeg();
     }
+    refreshStatus();
   </script>
 </body>
 </html>`;

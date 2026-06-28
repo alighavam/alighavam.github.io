@@ -8,7 +8,7 @@ tunnel: YOUR_TUNNEL_UUID
 credentials-file: /Users/YOUR_USER/.cloudflared/YOUR_TUNNEL_UUID.json
 
 ingress:
-  # Public HTTPS URL → ESP32 on lab WiFi
+  # Caddy on lab Mac rewrites /stream → go2rtc (see cloudflare/go2rtc/README.md)
   - hostname: cam.yourdomain.com
-    service: http://192.168.1.100:80
+    service: http://127.0.0.1:8080
   - service: http_status:404

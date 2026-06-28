@@ -1,0 +1,14 @@
+# Copy to ~/.config/go2rtc/go2rtc.yaml on the lab Mac Studio.
+# go2rtc pulls ONE stream from the ESP32 and fans out to many viewers via the tunnel.
+
+streams:
+  lab_cam:
+    # Replace IP and token with values from esp32_lab_camera/secrets.h
+    - http://172.30.189.61/stream?token=YOUR_STREAM_TOKEN#input=mjpeg
+
+api:
+  listen: ":1984"
+
+# Optional: open http://127.0.0.1:1984/ for a local debug UI
+webrtc:
+  listen: ":8555"

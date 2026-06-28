@@ -1,0 +1,26 @@
+# Local path rewrite: Worker/tunnel still use /stream and /frame (ESP32-style paths).
+# go2rtc receives requests on its API paths.
+#
+# Install: brew install caddy
+# Run:    caddy run --config /path/to/Caddyfile
+# Tunnel config.yml service: http://127.0.0.1:8080
+
+:8080 {
+	handle /stream* {
+		rewrite * /api/stream.mjpeg?src=lab_cam
+		reverse_proxy 127.0.0.1:1984
+	}
+
+	handle /frame* {
+		rewrite * /api/frame.jpeg?src=lab_cam
+		reverse_proxy 127.0.0.1:1984
+	}
+
+	handle /api/* {
+		reverse_proxy 127.0.0.1:1984
+	}
+
+	handle / {
+		respond "Lab camera hub (go2rtc proxy)" 200
+	}
+}
