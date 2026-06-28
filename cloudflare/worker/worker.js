@@ -67,6 +67,20 @@ function fetchOrigin(request) {
 }
 
 async function getViewerCount(request, env) {
+  const cookie = getCookie(request, COOKIE_NAME);
+  if (env.WATCHER_KV && cookie) {
+    const viewerId = cookie.split('.').pop()?.slice(0, 16);
+    if (viewerId) {
+      await env.WATCHER_KV.put(`viewer:${viewerId}`, String(Date.now()), { expirationTtl: 45 });
+    }
+    const list = await env.WATCHER_KV.list({ prefix: 'viewer:' });
+    return Response.json({ count: list.keys.length }, { headers: { 'Cache-Control': 'no-store' } });
+  }
+
+  return countGo2rtcMjpegConsumers(request, env);
+}
+
+async function countGo2rtcMjpegConsumers(request, env) {
   const originUrl = new URL(request.url);
   originUrl.pathname = '/api/streams';
   originUrl.search = '';
@@ -90,7 +104,8 @@ async function getViewerCount(request, env) {
   }
 
   const stream = data[GO2RTC_STREAM];
-  const count = Array.isArray(stream?.consumers) ? stream.consumers.length : 0;
+  const consumers = Array.isArray(stream?.consumers) ? stream.consumers : [];
+  const count = consumers.filter((c) => c.format_name === 'mpjpeg' || c.format_name === 'mjpeg').length;
   return Response.json({ count }, { headers: { 'Cache-Control': 'no-store' } });
 }
 
@@ -357,7 +372,17 @@ function viewerPage() {
       status.textContent = formatStatus();
     }
 
+    function stopStreamPoll() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }
+
     async function pollViewers() {
+      if (!streamLive) {
+        return;
+      }
       try {
         const r = await fetch('/api/viewers');
         if (!r.ok) {
@@ -381,22 +406,20 @@ function viewerPage() {
       failCount += 1;
       if (failCount >= 3) {
         streamLive = false;
+        viewerCount = null;
+        stopStreamPoll();
+        img.removeAttribute('src');
         status.textContent = 'Stream unavailable — check ESP32 and tunnel.';
       }
     };
 
     function startMjpeg() {
-      if (pollTimer) {
-        clearInterval(pollTimer);
-        pollTimer = null;
-      }
+      stopStreamPoll();
       img.src = '/stream?_=' + Date.now();
     }
 
     function startFramePoll() {
-      if (pollTimer) {
-        clearInterval(pollTimer);
-      }
+      stopStreamPoll();
       function tick() {
         img.src = '/frame?_=' + Date.now();
       }
