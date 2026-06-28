@@ -14,5 +14,3 @@ routes = [
 [[kv_namespaces]]
 binding = "WATCHER_KV"
 id = "842f6030a48c4e1b8ac472230ec95744"
-
-4accd826a17f066aefd10ade3c7d89b12dee5b5a261a7195bcd243ed393d3480
