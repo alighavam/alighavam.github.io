@@ -10,7 +10,7 @@ Telegram  ↔  Cloudflare Worker (edge)  ↔  HTTPS  ↔  Mac Studio print_watch
 ```
 
 1. **Scheduled** (every 30 min): Mac Studio samples frames; if done → Worker sends Telegram.
-2. **`/check` in Telegram** → Worker queues request → Mac Studio polls every 5s → runs burst → Worker replies.
+2. **`/check` in Telegram** → Worker queues request → Mac Studio polls every 30s → runs burst → Worker replies.
 3. **Double confirm**: two 5s bursts back-to-back before “finished” (immediate, not 30 min apart).
 
 ## Setup

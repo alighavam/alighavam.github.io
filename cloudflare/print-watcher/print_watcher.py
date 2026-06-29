@@ -59,7 +59,7 @@ class Config:
             burst_frames=int(data.get("burst_frames", 5)),
             burst_interval_sec=float(data.get("burst_interval_sec", 1.0)),
             schedule_interval_minutes=int(data.get("schedule_interval_minutes", 30)),
-            worker_poll_interval_sec=float(data.get("worker_poll_interval_sec", 5.0)),
+            worker_poll_interval_sec=float(data.get("worker_poll_interval_sec", 30.0)),
             frame_width=int(data.get("frame_width", 160)),
             frame_height=int(data.get("frame_height", 120)),
         )

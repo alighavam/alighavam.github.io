@@ -9,7 +9,7 @@
   "burst_frames": 5,
   "burst_interval_sec": 1.0,
   "schedule_interval_minutes": 30,
-  "worker_poll_interval_sec": 5,
+  "worker_poll_interval_sec": 30,
 
   "frame_width": 160,
   "frame_height": 120
