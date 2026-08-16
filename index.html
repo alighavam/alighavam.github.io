@@ -1,193 +1,209 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ali Ghavampour - Portfolio</title>
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
-    <!-- Animation Library (AOS) -->
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    
-    <!-- Custom CSS -->
+    <meta name="color-scheme" content="dark light">
+    <meta name="description" content="Ali Ghavampour — PhD student in Neuroscience at Western University, studying the neural mechanisms of motor control with fMRI and computational modeling.">
+    <title>Ali Ghavampour</title>
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23e0a45c'/><text x='16' y='22' font-family='monospace' font-size='16' font-weight='bold' text-anchor='middle' fill='%23241703'>A</text></svg>">
+
+    <!-- Set the theme before first paint so there is no flash of the wrong one. -->
+    <script>
+        (function () {
+            var root = document.documentElement;
+            var saved = null;
+            try { saved = localStorage.getItem('theme'); } catch (e) {}
+            var prefersLight = window.matchMedia &&
+                window.matchMedia('(prefers-color-scheme: light)').matches;
+            root.dataset.theme = saved || (prefersLight ? 'light' : 'dark');
+            root.className = 'js';
+
+            // Failsafe: .js hides .reveal elements until script.js shows them.
+            // If script.js never ran, un-hide everything rather than leave a blank page.
+            window.addEventListener('load', function () {
+                if (window.__revealReady) return;
+                var els = document.querySelectorAll('.reveal');
+                for (var i = 0; i < els.length; i++) els[i].classList.add('is-in');
+            });
+        })();
+    </script>
+
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- PURPLE HAZE BACKGROUND -->
-    <div class="liquid-background">
-        <div class="light-orb orb-1"></div>
-        <div class="light-orb orb-2"></div>
-        <div class="light-orb orb-3"></div>
-    </div>
+    <!-- NAVBAR -->
+    <nav class="nav">
+        <div class="wrap nav-inner">
+            <a href="#top" class="nav-brand">Ali Ghavampour</a>
 
-    <!-- LIQUID GLASS NAVBAR -->
-    <nav class="glass-nav">
-        <div class="nav-logo">Ali Ghavampour</div>
-        <ul class="nav-links">
-            <li><a href="#home">Home</a></li>
-            <li><a href="#projects">Projects</a></li>
-            <li><a href="#publications">Publications</a></li>
-            <li><a href="#about">About</a></li>
-        </ul>
-        <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme">
-            <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="5"></circle>
-                <line x1="12" y1="1" x2="12" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="23"></line>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                <line x1="1" y1="12" x2="3" y2="12"></line>
-                <line x1="21" y1="12" x2="23" y2="12"></line>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-            </svg>
-            <svg class="moon-icon hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            </svg>
-        </button>
+            <ul class="nav-links">
+                <li><a href="#top">Home</a></li>
+                <li><a href="#projects">Projects</a></li>
+                <li><a href="#publications">Publications</a></li>
+                <li><a href="#about">About</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <!-- Drop your CV at ./cv.pdf and this button starts working. -->
+                <a href="./cv.pdf" class="btn-cv" target="_blank" rel="noopener">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 3v12"></path>
+                        <path d="m7 11 5 5 5-5"></path>
+                        <path d="M5 20h14"></path>
+                    </svg>
+                    CV
+                </a>
+
+                <button id="theme-toggle" class="theme-btn" aria-label="Toggle colour theme">
+                    <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="4.5"></circle>
+                        <path d="M12 1.5v2M12 20.5v2M3.6 3.6l1.4 1.4M19 19l1.4 1.4M1.5 12h2M20.5 12h2M3.6 20.4 5 19M19 5l1.4-1.4"></path>
+                    </svg>
+                    <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
     </nav>
 
-    <!-- HERO SECTION -->
-    <section id="home" class="hero-section">
-        <div class="hero-container glass-panel" data-aos="fade-up">
-            
-            <!-- Profile Image -->
-            <div class="hero-image">
-                <img src="./resources/myphoto.jpg" alt="Researcher Portrait">
-            </div>
+    <!-- HERO -->
+    <header id="top" class="hero">
+        <div class="wrap hero-grid">
+            <img class="hero-photo"
+                 src="./resources/myphoto_320.jpg"
+                 srcset="./resources/myphoto_320.jpg 320w, ./resources/myphoto_640.jpg 640w"
+                 sizes="(max-width: 760px) 150px, 260px"
+                 width="640" height="640"
+                 fetchpriority="high" decoding="async"
+                 alt="Ali Ghavampour">
 
-            <!-- Intro Text -->
-            <div class="hero-text">
-                <h1>Hi, I'm <span class="highlight">Ali Ghavampour</span>.</h1>
-                <p class="intro-lead">
-                    PhD Student in Neuroscience at Western University.
+            <div>
+                <h1>Hi, I'm <span class="name">Ali Ghavampour</span>.</h1>
+                <p class="hero-role">PhD Student in Neuroscience at Western University.</p>
+                <p class="hero-bio">
+                    I study the neural mechanisms of motor control using fMRI and computational
+                    modeling. My research focuses on how the brain plans and executes complex
+                    hand movements.
                 </p>
-                <p class="intro-bio">
-                    I study the neural mechanisms of motor control using fMRI and computational modeling. My research focuses on how the brain plans and executes complex hand movements.
-                </p>
-                <div class="hero-links">
-                    <a href="#publications" class="btn-liquid">View Publications</a>
-                    <a href="#projects" class="link-text">See Projects →</a>
+                <div class="hero-actions">
+                    <a href="#publications" class="btn btn-primary">View Publications</a>
+                    <a href="#projects" class="btn btn-ghost">See Projects</a>
                 </div>
             </div>
-
         </div>
-    </section>
+    </header>
 
-    <!-- PROJECTS SECTION -->
-    <section id="projects" class="section-pad">
-        <h2 class="section-title" data-aos="fade-right">Projects</h2>
-        <div class="grid-container">
-            
-            <!-- Project Card 1 -->
-            <div class="glass-card" data-aos="fade-up" data-aos-delay="100">
-                <div class="card-image gradient-1"></div>
-                <div class="card-content">
-                    <h3>Ergonomic Finger Force Device</h3>
-                    <p>Custom hardware development for hand/finger force measurement using Arduino, Python, and C++. Plug & Play.</p>
-                    <div class="tags">
-                        <span>Arduino</span><span>Hardware</span>
+    <main>
+        <!-- PROJECTS -->
+        <section id="projects" class="section">
+            <div class="wrap">
+                <div class="section-head reveal">
+                    <h2 class="section-title">Projects</h2>
+                    <span class="section-count">03</span>
+                </div>
+
+                <div class="card-grid">
+                    <article class="card reveal">
+                        <h3>Ergonomic Finger Force Device</h3>
+                        <p>Custom hardware for hand and finger force measurement, built with Arduino, Python and C++. Plug &amp; play.</p>
+                        <div class="tags"><span>Arduino</span><span>Hardware</span></div>
+                    </article>
+
+                    <article class="card reveal">
+                        <h3>Parallel Searchlight Analysis</h3>
+                        <p>A very fast searchlight analysis pipeline developed in the Diedrichsen lab. Check out the code <a href="https://github.com/DiedrichsenLab/AnatSearchlight" target="_blank" rel="noopener">on GitHub</a>.</p>
+                        <div class="tags"><span>Python</span><span>Methods</span><span>Neuroimaging</span></div>
+                    </article>
+
+                    <article class="card reveal">
+                        <h3>Learning Novel Muscle Activity Patterns</h3>
+                        <p>How we learn novel muscle activity patterns — much like learning a new guitar chord such as F#. Read the first paper <a href="https://www.diedrichsenlab.org/pubs/Ghavampour_Jnp_2025.pdf" target="_blank" rel="noopener">here</a>.</p>
+                        <div class="tags"><span>Neuroimaging</span><span>Motor Control</span></div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- PUBLICATIONS -->
+        <section id="publications" class="section">
+            <div class="wrap">
+                <div class="section-head reveal">
+                    <h2 class="section-title">Publications</h2>
+                    <span class="section-count">03</span>
+                </div>
+
+                <div class="pub-list">
+                    <article class="pub-item reveal">
+                        <span class="pub-year">2025</span>
+                        <div>
+                            <h4>A paradigm to study the learning of muscle activity patterns outside of the natural repertoire</h4>
+                            <p class="pub-meta">Journal of Neurophysiology &middot; <i>Ghavampour et al., 2025</i></p>
+                            <a class="link-arrow" href="https://www.diedrichsenlab.org/pubs/Ghavampour_Jnp_2025.pdf" target="_blank" rel="noopener">Read paper</a>
+                        </div>
+                    </article>
+
+                    <article class="pub-item reveal">
+                        <span class="pub-year">2024</span>
+                        <div>
+                            <h4>Multi-finger configurations: a paradigm to study learning novel muscle synergies</h4>
+                            <p class="pub-meta">Western University Thesis &middot; <i>Ghavampour, 2024</i></p>
+                            <a class="link-arrow" href="https://www.proquest.com/docview/3172951282?pq-origsite=gscholar&amp;fromopenview=true&amp;sourcetype=Dissertations%20&amp;%20Theses" target="_blank" rel="noopener">View thesis</a>
+                        </div>
+                    </article>
+
+                    <article class="pub-item reveal">
+                        <span class="pub-year">2023</span>
+                        <div>
+                            <h4>Prefrontal cortex encodes value pop-out in visual search</h4>
+                            <p class="pub-meta">iScience &middot; <i>Abbaszadeh et al., 2023</i></p>
+                            <a class="link-arrow" href="https://www.cell.com/iscience/fulltext/S2589-0042(23)01598-5" target="_blank" rel="noopener">Read paper</a>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABOUT -->
+        <section id="about" class="section">
+            <div class="wrap">
+                <div class="section-head reveal">
+                    <h2 class="section-title">About</h2>
+                </div>
+
+                <div class="about reveal">
+                    <p>
+                        I am currently a Neuroscience PhD student at Western University, supervised by
+                        Dr. Jörn Diedrichsen and Dr. Andrew Pruszynski. My background bridges electrical
+                        engineering and neuroscience, and I really enjoy building custom research hardware.
+                        Outside the lab, I enjoy playing guitar.
+                    </p>
+                    <p>
+                        If you're interested in collaborating, get in touch at
+                        <a href="mailto:aghavamp@uwo.ca">aghavamp@uwo.ca</a>.
+                    </p>
+                    <div class="social-row">
+                        <a class="social-pill" href="https://scholar.google.com/citations?user=XURR2VgAAAAJ&amp;hl=en" target="_blank" rel="noopener">Google Scholar</a>
+                        <a class="social-pill" href="https://github.com/alighavam" target="_blank" rel="noopener">GitHub</a>
+                        <a class="social-pill" href="https://x.com/AliGhavampour" target="_blank" rel="noopener">Twitter/X</a>
+                        <a class="social-pill" href="https://www.linkedin.com/in/alighavam/" target="_blank" rel="noopener">LinkedIn</a>
+                        <a class="social-pill" href="https://bsky.app/profile/alighavampour.bsky.social" target="_blank" rel="noopener">Bluesky</a>
                     </div>
                 </div>
             </div>
+        </section>
+    </main>
 
-            <!-- Project Card 2 -->
-            <div class="glass-card" data-aos="fade-up" data-aos-delay="200">
-                <div class="card-image gradient-2"></div>
-                <div class="card-content">
-                    <h3>Parallel Searchlight Analysis</h3>
-                    <p>A very fast searchlight anlaysis pipeline developed in Diedrichsen lab. 
-                        Check out the code <a href="https://github.com/DiedrichsenLab/AnatSearchlight">here</a>.</p>
-                    <div class="tags">
-                        <span>Python</span><span>Methods</span><span>Neuroimaging</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Project Card 3 -->
-            <div class="glass-card" data-aos="fade-up" data-aos-delay="300">
-                <div class="card-image gradient-3"></div>
-                <div class="card-content">
-                    <h3>Learning Novel Muscle Activity Patterns</h3>
-                    <p>I'm mainly working on how we learn novel muscle activity patterns (just like new guitar chords like F#). 
-                        Check out the first paper <a href="https://www.diedrichsenlab.org/pubs/Ghavampour_Jnp_2025.pdf">here</a>.</p>
-                    <div class="tags">
-                        <span>Neuroimaging</span><span>Motor Control</span>
-                    </div>
-                </div>
-            </div>
-
+    <footer class="footer">
+        <div class="wrap footer-inner">
+            <p>&copy; 2025 Ali Ghavampour</p>
+            <a href="https://cam.alighavam.com" class="cam-whisper" aria-label="Lab camera"></a>
         </div>
-    </section>
-
-    <!-- PUBLICATIONS SECTION -->
-    <section id="publications" class="section-pad">
-        <h2 class="section-title" data-aos="fade-right">Publications</h2>
-        <div class="pub-list">
-            
-            <div class="glass-item" data-aos="fade-left">
-                <span class="year">2025</span>
-                <div class="pub-details">
-                    <h4>A paradigm to study the learning of muscle activity patterns outside of the natural repertoire</h4>
-                    <p>Journal of Neurophysiology • <i>Ghavampour et al., 2025</i></p>
-                    <a href="https://www.diedrichsenlab.org/pubs/Ghavampour_Jnp_2025.pdf" class="link-small">Read Paper</a>
-                </div>
-            </div>
-
-            <div class="glass-item" data-aos="fade-left" data-aos-delay="100">
-                <span class="year">2024</span>
-                <div class="pub-details">
-                    <h4>Multi-finger configurations: a paradigm to study learning novel muscle synergies</h4>
-                    <p>Western Universtiy Thesis • <i>Ghavampour, 2024</i></p>
-                    <a href="https://www.proquest.com/docview/3172951282?pq-origsite=gscholar&fromopenview=true&sourcetype=Dissertations%20&%20Theses" class="link-small">View Thesis</a>
-                </div>
-            </div>
-
-            <div class="glass-item" data-aos="fade-left">
-                <span class="year">2025</span>
-                <div class="pub-details">
-                    <h4>Prefrontal cortex encodes value pop-out in visual search</h4>
-                    <p>Iscience • <i>Abbaszadeh et al., 2023</i></p>
-                    <a href="https://www.cell.com/iscience/fulltext/S2589-0042(23)01598-5" class="link-small">Read Paper</a>
-                </div>
-            </div>
-
-
-        </div>
-    </section>
-
-    <!-- SHORT BIO / CONTACT -->
-    <section id="about" class="section-pad">
-        <div class="glass-panel about-mini" data-aos="zoom-in">
-            <h3>About Me</h3>
-            <p>
-                I am currently a Neuroscience PhD student at Western University, supervised by Dr. Jörn Diedrichsen and Dr. Andrew Prusyznksi. 
-                My background bridges electrical engineering and neuroscience. I really enjoy building custom research hardware! You can definitely
-                contact me if you are interested in a colab: aghavamp@uwo.ca. 
-                Outside the lab, I enjoy playing guitar.
-            </p>
-            <div class="social-links-row">
-                <a href="https://scholar.google.com/citations?user=XURR2VgAAAAJ&hl=en" class="social-pill">Google Scholar</a>
-                <a href="https://github.com/alighavam" class="social-pill">GitHub</a>
-                <a href="https://x.com/AliGhavampour" class="social-pill">Twitter/X</a>
-                <a href="https://www.linkedin.com/in/alighavam/" class="social-pill">LinkedIn</a>
-                <a href="https://bsky.app/profile/alighavampour.bsky.social" class="social-pill">Blue Sky</a>
-            </div>
-        </div>
-    </section>
-
-    <footer>
-        <a href="https://cam.alighavam.com" class="cam-whisper" aria-label="Lab camera"></a>
-        <p>© 2025 Ali Ghavampour.</p>
     </footer>
 
-    <!-- Scripts -->
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
 </body>
 </html>
-
