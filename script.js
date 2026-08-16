@@ -58,6 +58,13 @@
         var nav = document.querySelector('.nav');
         var activeId = null;
         var ticking = false;
+        var locked = false;   // a click wins until the reader scrolls again
+
+        var setActive = function (id) {
+            if (id === activeId) return;
+            activeId = id;
+            for (var k in linkFor) linkFor[k].classList.toggle('is-active', k === activeId);
+        };
 
         // The active section is the last one whose top edge has crossed a probe
         // line. The line sweeps from just under the nav (at the top of the page)
@@ -69,6 +76,7 @@
         // progress guarantees every section gets its turn at any window size.
         var pickActive = function () {
             ticking = false;
+            if (locked) return;
 
             var doc = document.scrollingElement || document.documentElement;
             var max = doc.scrollHeight - window.innerHeight;
@@ -81,9 +89,7 @@
                 if (sections[i].getBoundingClientRect().top <= line) current = sections[i];
             }
 
-            if (current.id === activeId) return;
-            activeId = current.id;
-            for (var id in linkFor) linkFor[id].classList.toggle('is-active', id === activeId);
+            setActive(current.id);
         };
 
         // rAF-throttled: at most one pass per frame, and it only reads a handful
@@ -96,6 +102,35 @@
 
         window.addEventListener('scroll', schedule, { passive: true });
         window.addEventListener('resize', schedule, { passive: true });
-        pickActive();
+
+        // Clicking a link states intent outright, so highlight that section and
+        // hold it. Without this the probe line takes over as the smooth scroll
+        // lands and immediately highlights a different section — and the last
+        // sections can't reach the top of a tall window at all, so the landing
+        // position alone can never identify what was clicked.
+        Object.keys(linkFor).forEach(function (id) {
+            linkFor[id].addEventListener('click', function () {
+                setActive(id);
+                locked = true;
+            });
+        });
+
+        // Any scroll the reader starts themselves hands control back.
+        ['wheel', 'touchmove', 'keydown'].forEach(function (evt) {
+            window.addEventListener(evt, function () {
+                if (!locked) return;
+                locked = false;
+                schedule();
+            }, { passive: true });
+        });
+
+        // Honour a hash someone arrives on, e.g. alighavam.com/#projects
+        var hash = window.location.hash.slice(1);
+        if (hash && linkFor[hash]) {
+            setActive(hash);
+            locked = true;
+        } else {
+            pickActive();
+        }
     }
 })();
