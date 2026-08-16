@@ -48,24 +48,54 @@
 
     var sections = Object.keys(linkFor)
         .map(function (id) { return document.getElementById(id); })
-        .filter(Boolean);
+        .filter(Boolean)
+        .sort(function (a, b) {
+            // document order, whatever order the nav links happen to be in
+            return (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1;
+        });
 
-    if ('IntersectionObserver' in window && sections.length) {
-        var visible = new Set();
+    if (sections.length) {
+        var nav = document.querySelector('.nav');
+        var activeId = null;
+        var ticking = false;
 
-        var setActive = function () {
-            var current = sections.filter(function (s) { return visible.has(s.id); }).pop();
-            for (var id in linkFor) linkFor[id].classList.toggle('is-active', !!current && id === current.id);
+        // The active section is the last one whose top edge has crossed a probe
+        // line. The line sweeps from just under the nav (at the top of the page)
+        // down to the bottom of the viewport (at the end of the page).
+        //
+        // A line at a fixed height cannot work here: on a tall window this page
+        // only scrolls ~800px, so the last sections never reach the top of the
+        // viewport and could never become active. Tying the line to scroll
+        // progress guarantees every section gets its turn at any window size.
+        var pickActive = function () {
+            ticking = false;
+
+            var doc = document.scrollingElement || document.documentElement;
+            var max = doc.scrollHeight - window.innerHeight;
+            var progress = max > 0 ? Math.min(Math.max(doc.scrollTop / max, 0), 1) : 0;
+            var navH = nav.getBoundingClientRect().height;
+            var line = navH + (window.innerHeight - navH) * progress;
+
+            var current = sections[0];
+            for (var i = 0; i < sections.length; i++) {
+                if (sections[i].getBoundingClientRect().top <= line) current = sections[i];
+            }
+
+            if (current.id === activeId) return;
+            activeId = current.id;
+            for (var id in linkFor) linkFor[id].classList.toggle('is-active', id === activeId);
         };
 
-        var navObserver = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-                if (entry.isIntersecting) visible.add(entry.target.id);
-                else visible.delete(entry.target.id);
-            });
-            setActive();
-        }, { rootMargin: '-30% 0px -55% 0px' });
+        // rAF-throttled: at most one pass per frame, and it only reads a handful
+        // of rects — no styles are written unless the active section changed.
+        var schedule = function () {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(pickActive);
+        };
 
-        sections.forEach(function (s) { navObserver.observe(s); });
+        window.addEventListener('scroll', schedule, { passive: true });
+        window.addEventListener('resize', schedule, { passive: true });
+        pickActive();
     }
 })();

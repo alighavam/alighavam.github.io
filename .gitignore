@@ -4,8 +4,14 @@ _site
 .jekyll-metadata
 vendor
 .DS_Store
+**/.DS_Store
 
 # Lab camera secrets
 esp32-lab-camera/secrets.h
 esp32-lab-camera/esp32_lab_camera/secrets.h
+
+# Wrangler local state — holds the Cloudflare account id/email
+.wrangler/
+**/.wrangler/
 cloudflare/*.json
+cloudflare/**/*.json
