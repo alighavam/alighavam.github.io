@@ -115,6 +115,79 @@ a { color: var(--accent); }
     overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
 }
 
+/* --- BACKGROUND GRAIN --------------------------------------------------- */
+/* One tiled noise image, fixed to the viewport, sitting between the page
+   background and everything drawn on top of it. Cards, buttons and the nav
+   paint their own opaque backgrounds over it, so only the background itself
+   is textured. It is painted once and never repainted while scrolling.
+
+   Each tile is white specks whose alpha comes from an SVG noise filter; the
+   light theme inverts them to black specks. Three knobs:
+
+     1. texture     data-grain="..." on <html> in index.html
+     2. how much    --grain-amount below
+     3. how coarse  --grain-size below                                      */
+:root {
+    /* KNOB: strength. 0 = off · 0.5 = whisper · 1 = default · 2 = strong.
+       Each texture carries its own --grain-gain, so the same amount reads
+       about the same whichever texture is selected. */
+    --grain-amount: 1.2;
+
+    /* KNOB: coarseness. auto = the texture's own scale (finest, crispest).
+       A px value stretches the tile — 260px is chunky, 90px is tighter. */
+    --grain-size: 100px;
+
+    /* Default texture, used when <html> carries no data-grain. */
+    --grain: var(--grain-film);
+    --grain-gain: 0.19;
+
+    /* Texture library — seamless (stitchTiles) feTurbulence tiles. */
+    --grain-film: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 -0.5'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)'/%3E%3C/svg%3E");
+    --grain-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.5 0.72' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 -0.26'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
+    --grain-soft: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.32' numOctaves='5' stitchTiles='stitch'/%3E%3CfeGaussianBlur stdDeviation='0.4'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 -0.5'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)'/%3E%3C/svg%3E");
+    --grain-static: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='1' stitchTiles='stitch'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='discrete' tableValues='0 1'/%3E%3C/feComponentTransfer%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 -0.5'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* film    fine, even, 35mm-style grain
+   paper   fibrous and directional, like laid paper or a risograph print
+   soft    large soft mottling, closer to watercolour paper
+   static  coarse per-pixel TV static                                       */
+:root[data-grain="film"]   { --grain: var(--grain-film);   --grain-gain: 0.19; }
+:root[data-grain="paper"]  { --grain: var(--grain-paper);  --grain-gain: 0.14; }
+:root[data-grain="soft"]   { --grain: var(--grain-soft);   --grain-gain: 0.20; }
+:root[data-grain="static"] { --grain: var(--grain-static); --grain-gain: 0.055; }
+:root[data-grain="off"]    { --grain-amount: 0; }
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;                   /* over the page background, under content */
+    pointer-events: none;
+    background-image: var(--grain);
+    background-size: var(--grain-size);
+    opacity: calc(var(--grain-amount) * var(--grain-gain));
+}
+
+/* The nav is painted in --bg, so without this it reads as a flat strip across
+   an otherwise textured page. Fixed attachment keeps its tile in step with
+   the layer above; z-index -1 keeps the grain off the nav's own text. */
+.nav::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: var(--grain);
+    background-size: var(--grain-size);
+    background-attachment: fixed;
+    opacity: calc(var(--grain-amount) * var(--grain-gain));
+}
+
+/* Black specks read on a pale background; white ones do not. */
+:root[data-theme="light"] body::before,
+:root[data-theme="light"] .nav::after { filter: invert(1); }
+
 /* --- NAVBAR ------------------------------------------------------------- */
 .nav {
     position: sticky;
