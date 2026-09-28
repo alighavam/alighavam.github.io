@@ -543,6 +543,237 @@ body::before {
 }
 .cam-whisper:hover { opacity: 1; border-color: var(--accent); }
 
+/* --- PROJECT PAGES ------------------------------------------------------ */
+/* Standalone pages under /<project>/, e.g. /ergodigit/. They reuse the nav,
+   section heads, cards and buttons above; only what is new lives here. */
+.crumb {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-faint);
+    text-decoration: none;
+    margin-bottom: var(--sp-3);
+    transition: color 0.15s ease;
+}
+.crumb::before { content: "\2190  "; }
+.crumb:hover { color: var(--accent); }
+
+.proj-hero { padding: clamp(2rem, 5vw, 3.5rem) 0 0; }
+
+.proj-hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.05fr;
+    gap: clamp(2rem, 5vw, 3.5rem);
+    align-items: center;
+}
+
+.proj-hero h1 {
+    font-size: clamp(2.3rem, 5.5vw, 3.3rem);
+    font-weight: 680;
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    margin: var(--sp-2) 0;
+}
+.proj-hero h1 .name { color: var(--accent); }
+
+.proj-lead {
+    font-size: clamp(1.05rem, 2vw, 1.2rem);
+    font-weight: 500;
+    margin-bottom: var(--sp-2);
+}
+
+.proj-hero-photo {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 10 / 7;
+    object-fit: cover;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+}
+
+/* Four cards read better as 2 × 2 than as 3 + 1 */
+.card-grid.two-up { grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+
+/* Prose block — same card treatment as .about */
+.prose {
+    padding: var(--sp-4);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+.prose p {
+    font-size: 1.03rem;
+    color: var(--text-muted);
+    max-width: 68ch;
+}
+.prose p + p { margin-top: var(--sp-2); }
+.prose strong { color: var(--text); font-weight: 600; }
+
+/* 3D viewer */
+.viewer {
+    position: relative;
+    height: clamp(340px, 62vw, 560px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.viewer model-viewer {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    --poster-color: transparent;
+    --progress-bar-color: var(--accent);
+}
+
+/* Poster: a still render, shown while the model loads — and in its place if
+   the model file is missing or the viewer script cannot load. */
+.viewer-poster {
+    position: absolute;
+    inset: 0;
+}
+.viewer-poster img {
+    position: absolute;
+    top: var(--sp-4);
+    left: var(--sp-4);
+    width: calc(100% - 2 * var(--sp-4));
+    height: calc(100% - 2 * var(--sp-4));
+    object-fit: contain;
+    opacity: 0.9;
+}
+
+.viewer-hint {
+    position: absolute;
+    left: var(--sp-3);
+    bottom: var(--sp-2);
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--text-faint);
+    pointer-events: none;
+}
+.viewer-hint .when-missing { display: none; }
+.viewer.is-missing .viewer-hint .when-ready { display: none; }
+.viewer.is-missing .viewer-hint .when-missing { display: inline; }
+
+/* Key figures */
+.spec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1px;
+    background: var(--border);         /* shows through the gaps as hairlines */
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+.spec {
+    padding: var(--sp-3);
+    background: var(--surface);
+}
+.spec dt {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+}
+.spec dd { font-size: 0.97rem; color: var(--text-muted); }
+.spec dd b { display: block; font-size: 1.14rem; font-weight: 620; color: var(--text); }
+
+/* What's in the box */
+.box-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 0.6rem var(--sp-4);
+}
+.box-list li {
+    display: flex;
+    gap: 0.7rem;
+    font-size: 0.99rem;
+    color: var(--text-muted);
+}
+.box-list li::before {
+    content: "";
+    flex: none;
+    width: 7px; height: 7px;
+    margin-top: 0.62em;
+    border-radius: 2px;
+    background: var(--accent);
+}
+.box-list b { color: var(--text); font-weight: 600; }
+
+/* Photo gallery */
+.gallery {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--sp-3);
+}
+.gallery figure { grid-column: span 2; }
+.gallery figure.wide { grid-column: span 3; }
+.gallery a { display: block; }
+.gallery img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    transition: border-color 0.15s ease;
+}
+.gallery a:hover img { border-color: var(--accent); }
+.gallery figcaption {
+    margin-top: 0.5rem;
+    font-size: 0.88rem;
+    color: var(--text-faint);
+}
+
+/* Closing call to action */
+.cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    padding: var(--sp-4);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+}
+.cta h2 {
+    font-size: 1.35rem;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.3rem;
+}
+.cta p { color: var(--text-muted); max-width: 58ch; }
+.cta p a {
+    color: var(--accent);
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+}
+
+@media (max-width: 860px) {
+    .proj-hero-grid { grid-template-columns: 1fr; }
+    .proj-hero-photo { order: -1; }
+    .gallery { grid-template-columns: repeat(2, 1fr); gap: var(--sp-2); }
+    .gallery figure, .gallery figure.wide { grid-column: span 1; }
+}
+
+@media (max-width: 760px) {
+    .prose, .cta { padding: var(--sp-3); }
+}
+
+@media (max-width: 420px) {
+    .gallery { grid-template-columns: 1fr; }
+}
+
 /* --- SCROLL REVEAL ------------------------------------------------------ */
 /* Only applied when JS is running, so no-JS visitors always see content.
    Animates opacity/transform only — compositor work, no layout or repaint. */

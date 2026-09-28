@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<!-- data-grain: film | paper | soft | static | off  (see BACKGROUND GRAIN in style.css) -->
+<html lang="en" data-theme="dark" data-grain="film">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark light">
+    <meta name="description" content="ErgoDigit Flex — an ergonomic, plug-and-play device for measuring the force of every finger on both hands, built for motor control research.">
+    <title>ErgoDigit Flex — Ali Ghavampour</title>
+    <link rel="canonical" href="https://alighavam.com/ergodigit/">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://alighavam.com/ergodigit/">
+    <meta property="og:title" content="ErgoDigit Flex">
+    <meta property="og:description" content="An ergonomic, plug-and-play device for measuring finger forces on both hands, built for motor control research.">
+    <meta property="og:image" content="https://alighavam.com/resources/ergodigit/front.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@AliGhavampour">
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23e0a45c'/><text x='16' y='22' font-family='monospace' font-size='16' font-weight='bold' text-anchor='middle' fill='%23241703'>A</text></svg>">
+
+    <!-- Set the theme before first paint so there is no flash of the wrong one. -->
+    <script>
+        (function () {
+            var root = document.documentElement;
+            var saved = null;
+            try { saved = localStorage.getItem('theme'); } catch (e) {}
+            var prefersLight = window.matchMedia &&
+                window.matchMedia('(prefers-color-scheme: light)').matches;
+            root.dataset.theme = saved || (prefersLight ? 'light' : 'dark');
+            root.className = 'js';
+
+            // Failsafe: .js hides .reveal elements until script.js shows them.
+            // If script.js never ran, un-hide everything rather than leave a blank page.
+            window.addEventListener('load', function () {
+                if (window.__revealReady) return;
+                var els = document.querySelectorAll('.reveal');
+                for (var i = 0; i < els.length; i++) els[i].classList.add('is-in');
+            });
+        })();
+    </script>
+
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- Interactive 3D viewer (Google <model-viewer>). Loaded as a module so it
+         never blocks the page; without it the still render stays in place. -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js"></script>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="nav">
+        <div class="wrap nav-inner">
+            <a href="../" class="nav-brand">Ali Ghavampour</a>
+
+            <ul class="nav-links">
+                <li><a href="../#top">Home</a></li>
+                <li><a href="../#projects" class="is-active">Projects</a></li>
+                <li><a href="../#publications">Publications</a></li>
+                <li><a href="../#about">About</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <a href="../cv.pdf" class="btn-cv" target="_blank" rel="noopener">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 3v12"></path>
+                        <path d="m7 11 5 5 5-5"></path>
+                        <path d="M5 20h14"></path>
+                    </svg>
+                    CV
+                </a>
+
+                <button id="theme-toggle" class="theme-btn" aria-label="Toggle colour theme">
+                    <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="4.5"></circle>
+                        <path d="M12 1.5v2M12 20.5v2M3.6 3.6l1.4 1.4M19 19l1.4 1.4M1.5 12h2M20.5 12h2M3.6 20.4 5 19M19 5l1.4-1.4"></path>
+                    </svg>
+                    <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <header id="top" class="proj-hero">
+        <div class="wrap">
+            <a href="../#projects" class="crumb">All projects</a>
+
+            <div class="proj-hero-grid">
+                <div>
+                    <div class="tags"><span>Research hardware</span><span>Motor Control</span></div>
+                    <h1>ErgoDigit <span class="name">Flex</span></h1>
+                    <p class="proj-lead">An ergonomic, plug-and-play device for measuring the force of every finger on both hands.</p>
+                    <p class="hero-bio">
+                        ErgoDigit Flex lets researchers record how hard each of the ten fingers presses,
+                        millisecond by millisecond, while participants rest their hands comfortably on a
+                        contoured support. It was designed and built in the Diedrichsen Lab at Western
+                        University to study how we learn and control skilled hand movements.
+                    </p>
+                    <div class="hero-actions">
+                        <a href="mailto:aghavamp@uwo.ca?subject=ErgoDigit%20Flex" class="btn btn-primary">Get in touch</a>
+                        <a href="#model" class="btn btn-ghost">View in 3D</a>
+                    </div>
+                </div>
+
+                <img class="proj-hero-photo"
+                     src="../resources/ergodigit/front.jpg"
+                     width="1600" height="1120"
+                     fetchpriority="high" decoding="async"
+                     alt="ErgoDigit Flex hand unit: a contoured grey hand rest with four finger keys across the top and a thumb key on the side">
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- 3D MODEL -->
+        <section id="model" class="section">
+            <div class="wrap">
+                <div class="section-head reveal">
+                    <h2 class="section-title">Explore in 3D</h2>
+                </div>
+
+                <div class="viewer reveal" id="viewer">
+                    <!-- Export from Shapr3D and drop the file at this path. -->
+                    <model-viewer
+                        src="../resources/ergodigit/ergodigit.glb"
+                        alt="Interactive 3D model of the ErgoDigit Flex hand unit"
+                        camera-controls
+                        auto-rotate
+                        auto-rotate-delay="2500"
+                        rotation-per-second="18deg"
+                        interaction-prompt="none"
+                        touch-action="pan-y"
+                        shadow-intensity="1"
+                        shadow-softness="0.9"
+                        exposure="1.05"
+                        environment-image="neutral"
+                        camera-orbit="-30deg 62deg auto">
+                        <div slot="poster" class="viewer-poster">
+                            <img src="../resources/ergodigit/render.png" width="916" height="890"
+                                 alt="Render of the ErgoDigit Flex hand unit">
+                        </div>
+                    </model-viewer>
+
+                    <p class="viewer-hint">
+                        <span class="when-ready">Drag to rotate &middot; scroll or pinch to zoom</span>
+                        <span class="when-missing">Interactive model coming soon</span>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- OVERVIEW -->
+        <section id="overview" class="section">
+            <div class="wrap">
+                <div class="section-head reveal">
+                    <h2 class="section-title">What it is</h2>
+                </div>
+
+                <div class="prose reveal">
+                    <p>
+                        The system has <strong>two hand units</strong>, one for each hand, and a
+                        compact <strong>amplifier unit</strong> that connects them to an ordinary laptop
+                        or desktop over a single USB cable. Each hand unit is shaped so the hand rests on
+                        it naturally, with a key beneath every fingertip.
+                    </p>
+                    <p>
+                        The measurement is <strong>isometric</strong>: the keys barely move, so what is
+                        recorded is pure force rather than movement. That makes it well suited to
+                        studying fine control of individual fingers, and how that control changes with
+                        practice.
+                    </p>
+                    <p>
+                        Experiments are written in <strong>PsychoPy</strong>, the free, open-source
+                        toolkit many labs already use, and run on Windows, macOS or Linux. The whole kit
+                        is light enough to carry, so it works just as well in a fixed lab setup as it
+                        does at a bedside.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- USES -->
+        <section id="uses" class="section">
+            <div class="wrap">
+                <div class="section-head reveal">
+                    <h2 class="section-title">What it's used for</h2>
+                </div>
+
+                <div class="card-grid two-up">
+                    <article class="card reveal">
+                        <h3>Finger sequences</h3>
+                        <p>Pressing fingers one after another in a set order, to track how speed and accuracy improve as a sequence is learned.</p>
+                    </article>
+
+                    <article class="card reveal">
+                        <h3>Multi-finger chords</h3>
+                        <p>Pressing several fingers at once in a specific pattern, much like learning a new chord on the guitar.</p>
+                    </article>
+
+                    <article class="card reveal">
+                        <h3>Finger individuation</h3>
+                        <p>Pressing with one finger while keeping the others still, a common measure in research on dexterity and motor recovery.</p>
+                    </article>
+
+                    <article class="card reveal">
+                        <h3>Two-handed tasks</h3>
+                        <p>All ten fingers are recorded at the same time, so tasks can involve both hands and how they work together.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- AT A GLANCE -->
+        <section id="specs" class="section">
+            <div class="wrap">
+                <div class="section-head reveal">
+                    <h2 class="section-title">At a glance</h2>
+                </div>
+
+                <dl class="spec-grid reveal">
+                    <div class="spec">
+                        <dt>Channels</dt>
+                        <dd><b>10 fingers</b>Five per hand, one key per finger</dd>
+                    </div>
+                    <div class="spec">
+                        <dt>Measures</dt>
+                        <dd><b>Finger force</b>Isometric: the keys barely move</dd>
+                    </div>
+                    <div class="spec">
+                        <dt>Force range</dt>
+                        <dd><b>Up to ~18 N</b>Three selectable ranges per finger</dd>
+                    </div>
+                    <div class="spec">
+                        <dt>Sampling rate</dt>
+                        <dd><b>Up to 500 Hz</b>A new reading every 2 ms</dd>
+                    </div>
+                    <div class="spec">
+                        <dt>Latency</dt>
+                        <dd><b>~13 ms</b>From key press to screen, best case</dd>
+                    </div>
+                    <div class="spec">
+                        <dt>Connection</dt>
+                        <dd><b>One USB cable</b>Windows, macOS or Linux</dd>
+                    </div>
+                    <div class="spec">
+                        <dt>Software</dt>
+                        <dd><b>PsychoPy</b>Free and open source</dd>
+                    </div>
+                    <div class="spec">
+                        <dt>Hand unit</dt>
+                        <dd><b>20 &times; 16 &times; 6.4 cm</b>Left and right, mirror images</dd>
+                    </div>
+                </dl>
+            </div>
+        </section>
+
+        <!-- IN THE BOX -->
+        <section id="included" class="section">
+            <div class="wrap">
+                <div class="section-head reveal">
+                    <h2 class="section-title">What's included</h2>
+                </div>
+
+                <div class="prose reveal">
+                    <ul class="box-list">
+                        <li><span><b>Two hand units</b>, one for each hand</span></li>
+                        <li><span><b>Amplifier unit</b> that connects them to the computer</span></li>
+                        <li><span><b>Two padded forearm rests</b> for long sessions</span></li>
+                        <li><span><b>Two mounting brackets</b> to hold the hand units in place</span></li>
+                        <li><span><b>All cables</b>: hand units, USB and power</span></li>
+                        <li><span><b>Experiment code</b> to get started in PsychoPy</span></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- GALLERY -->
+        <section id="gallery" class="section">
+            <div class="wrap">
+                <div class="section-head reveal">
+                    <h2 class="section-title">Gallery</h2>
+                </div>
+
+                <div class="gallery">
+                    <figure class="wide reveal">
+                        <a href="../resources/ergodigit/hand_front.jpg" target="_blank" rel="noopener">
+                            <img src="../resources/ergodigit/hand_front.jpg" width="1600" height="1200" loading="lazy" decoding="async"
+                                 alt="A person seated at a desk with their right hand resting on the device">
+                        </a>
+                        <figcaption>In use: the hand rests naturally, fingertips on the keys.</figcaption>
+                    </figure>
+                    <figure class="wide reveal">
+                        <a href="../resources/ergodigit/side.jpg" target="_blank" rel="noopener">
+                            <img src="../resources/ergodigit/side.jpg" width="1600" height="1200" loading="lazy" decoding="async"
+                                 alt="Side view of the hand unit showing its contoured profile and thumb key">
+                        </a>
+                        <figcaption>Side profile, with the thumb key.</figcaption>
+                    </figure>
+                    <figure class="reveal">
+                        <a href="../resources/ergodigit/hand_top.jpg" target="_blank" rel="noopener">
+                            <img src="../resources/ergodigit/hand_top.jpg" width="917" height="1100" loading="lazy" decoding="async"
+                                 alt="Top-down view of a hand on the device, one finger on each key">
+                        </a>
+                        <figcaption>One key under each finger.</figcaption>
+                    </figure>
+                    <figure class="reveal">
+                        <a href="../resources/ergodigit/armrest.jpg" target="_blank" rel="noopener">
+                            <img src="../resources/ergodigit/armrest.jpg" width="1520" height="888" loading="lazy" decoding="async"
+                                 alt="Hand unit next to its padded forearm rest">
+                        </a>
+                        <figcaption>Hand unit with its padded forearm rest.</figcaption>
+                    </figure>
+                    <figure class="reveal">
+                        <a href="../resources/ergodigit/amplifier.jpg" target="_blank" rel="noopener">
+                            <img src="../resources/ergodigit/amplifier.jpg" width="1400" height="840" loading="lazy" decoding="async"
+                                 alt="Front panel of the blue amplifier unit with two hand unit sockets and a USB socket">
+                        </a>
+                        <figcaption>The amplifier unit: two hands in, one USB out.</figcaption>
+                    </figure>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONTACT -->
+        <section id="contact" class="section">
+            <div class="wrap">
+                <div class="cta reveal">
+                    <div>
+                        <h2>Interested in ErgoDigit Flex?</h2>
+                        <p>
+                            If you'd like to learn more, or to purchase or build one for your lab,
+                            email me at <a href="mailto:aghavamp@uwo.ca?subject=ErgoDigit%20Flex">aghavamp@uwo.ca</a>.
+                        </p>
+                    </div>
+                    <a href="mailto:aghavamp@uwo.ca?subject=ErgoDigit%20Flex" class="btn btn-primary">Email me</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="wrap footer-inner">
+            <p>&copy; 2026 Ali Ghavampour</p>
+        </div>
+    </footer>
+
+    <script src="../script.js" defer></script>
+    <script>
+        // No model file yet (or the viewer failed)? Keep the still render and say so.
+        (function () {
+            var viewer = document.getElementById('viewer');
+            var mv = viewer && viewer.querySelector('model-viewer');
+            if (!mv) return;
+            mv.addEventListener('error', function () { viewer.classList.add('is-missing'); });
+            // If the viewer script never loads, the element is never upgraded.
+            setTimeout(function () {
+                if (!window.customElements || !customElements.get('model-viewer')) {
+                    viewer.classList.add('is-missing');
+                }
+            }, 8000);
+        })();
+    </script>
+</body>
+</html>
