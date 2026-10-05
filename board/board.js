@@ -132,10 +132,14 @@ function cacheBoard() {
 // ---------- Loading & syncing ----------
 
 let refreshing = false;
+let lastRefresh = 0;
 
+// No polling: the board only syncs when it is opened or returned to,
+// to stay light on the account-wide Workers request allowance.
 async function refresh() {
-  if (!token || refreshing || document.hidden) return;
+  if (!token || refreshing || document.hidden || Date.now() - lastRefresh < 10_000) return;
   refreshing = true;
+  lastRefresh = Date.now();
   try {
     const { cards: list } = await (await api('/board')).json();
     // Never clobber local edits that haven't reached the server yet.
@@ -153,7 +157,6 @@ async function refresh() {
   }
 }
 
-setInterval(refresh, 20_000);
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) flush();
   else refresh();
@@ -900,6 +903,7 @@ function showBoard() {
 function lock() {
   token = null;
   openId = null;
+  lastRefresh = 0;
   dirty.clear();
   removed.clear();
   cards = new Map();
