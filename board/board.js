@@ -1,5 +1,6 @@
 // Paper Assembly Line — a calm, single-user kanban for papers.
 // Data is stored by the Cloudflare Worker in cloudflare/board-worker.
+// The demo (no password) never talks to the Worker; it lives in localStorage.
 
 const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
 const API = LOCAL ? 'http://localhost:8787' : 'https://board-api.alighavam.com';
@@ -40,6 +41,7 @@ const store = {
 };
 
 let token = store.get('board.token');
+let demo = !token && (store.get('board.mode') === 'demo' || location.hash === '#demo');
 let cards = new Map();
 const cardEls = new Map();
 const lists = new Map();
@@ -75,9 +77,10 @@ let flushing = false;
 let failures = 0;
 
 function save(id, delay = 0) {
+  cacheBoard();
+  if (demo) return;
   dirty.add(id);
   setSync('saving');
-  cacheBoard();
   scheduleFlush(delay);
 }
 
@@ -126,7 +129,12 @@ function setSync(state) {
 }
 
 function cacheBoard() {
-  store.set('board.cache', JSON.stringify([...cards.values()]));
+  if (!demo) {
+    store.set('board.cache', JSON.stringify([...cards.values()]));
+    return;
+  }
+  store.set('board.demo', JSON.stringify([...cards.values()]));
+  pruneDemoImages();
 }
 
 // ---------- Loading & syncing ----------
@@ -179,6 +187,7 @@ function imageUrl(id) {
 }
 
 async function fetchImage(id) {
+  if (demo) return demoImage(id);
   const key = `${API}/images/${id}`;
   let cache;
   try { cache = await caches.open('board-images'); } catch {}
@@ -191,6 +200,7 @@ async function fetchImage(id) {
 }
 
 async function uploadImage(file) {
+  if (demo) return saveDemoImage(file);
   const blob = await shrink(file);
   const { id } = await (await api('/images', { method: 'POST', body: blob, type: 'image/jpeg' })).json();
   imageUrls.set(id, Promise.resolve(URL.createObjectURL(blob)));
@@ -201,7 +211,7 @@ async function uploadImage(file) {
   return id;
 }
 
-async function shrink(file, max = 1200) {
+async function shrink(file, max = 1200, quality = 0.84) {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement('canvas');
@@ -211,7 +221,7 @@ async function shrink(file, max = 1200) {
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.84));
+  return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
 }
 
 // ---------- Rendering ----------
@@ -394,10 +404,11 @@ function deleteCard(id) {
   const finish = () => {
     cards.delete(id);
     dirty.delete(id);
-    removed.add(id);
-    setSync('saving');
     cacheBoard();
     render();
+    if (demo) return;
+    removed.add(id);
+    setSync('saving');
     scheduleFlush(0);
   };
   if (el && !CALM) {
@@ -780,7 +791,9 @@ scrim.addEventListener('pointerdown', (e) => {
   if (e.target === scrim) closeCard();
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && openId) closeCard();
+  if (e.key !== 'Escape') return;
+  if (!info.hidden) closeInfo();
+  else if (openId) closeCard();
 });
 
 let deleteArmTimer = 0;
@@ -890,14 +903,27 @@ function showBoard() {
   $('app').hidden = false;
   buildBoard();
   cardEls.clear();
+  const saved = store.get(demo ? 'board.demo' : 'board.cache');
   try {
-    const cached = JSON.parse(store.get('board.cache') || '[]');
-    cards = new Map(cached.map((c) => [c.id, c]));
+    cards = new Map(JSON.parse(saved || '[]').map((c) => [c.id, c]));
   } catch {
     cards = new Map();
   }
+  if (demo && !saved) cards = demoSeed();
+
+  $('demo-pill').hidden = !demo;
+  $('info-btn').hidden = !demo;
+  $('lock-btn').setAttribute('aria-label', demo ? 'Leave the demo' : 'Lock board');
+  $('lock-btn').title = demo ? 'Leave the demo' : 'Lock board';
+  $('sync').title = demo ? 'Saved in this browser' : 'All changes saved';
+
   render({ animate: false });
-  refresh();
+  if (demo) {
+    cacheBoard();
+    if (!store.get('board.demo.seen')) setTimeout(openInfo, 650);
+  } else {
+    refresh();
+  }
 }
 
 function lock() {
@@ -915,9 +941,26 @@ function lock() {
 }
 
 $('lock-btn').addEventListener('click', async () => {
+  if (demo) return leaveDemo();
   await flush();
   lock();
 });
+
+$('demo-btn').addEventListener('click', () => {
+  demo = true;
+  store.set('board.mode', 'demo');
+  history.replaceState(null, '', '#demo');
+  showBoard();
+});
+
+function leaveDemo() {
+  demo = false;
+  openId = null;
+  store.set('board.mode', null);
+  history.replaceState(null, '', location.pathname);
+  imageUrls.clear();
+  showLogin();
+}
 
 $('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -948,4 +991,197 @@ $('login-form').addEventListener('submit', async (e) => {
   }
 });
 
-token ? showBoard() : showLogin();
+// ---------- Demo ----------
+
+const DEMO_IMG = 'board.demo.img.';
+
+function demoSeed() {
+  const papers = [
+    ['concept', 'Why do we forget names so fast?', 'rose', null, 'Just an idea. Read the classic name-recall papers first.'],
+    ['concept', 'Sleep and learning new skills', 'slate', null, ''],
+    ['pilot', 'Reaching for things in virtual reality', 'sky', 'waves', 'Pilot with three people this week.'],
+    ['data', 'Attention in crowded scenes', 'teal', 'dots', 'All data in. Running the stats.'],
+    ['data', 'How songbirds learn to sing', 'sand', null, ''],
+    ['figures', 'Coffee and reaction time', 'clay', 'bars', 'Figure 2 needs bigger fonts.'],
+    ['methods', 'Hand skills across the lifespan', 'sage', null, ''],
+    ['review', 'A map of the motor cortex', 'lavender', 'rings', 'Sent to co-authors. Waiting on comments.'],
+    ['submitted', 'A gentle guide to mixed models', 'sky', null, 'Submitted! Fingers crossed.'],
+  ];
+  const seen = {};
+  return new Map(papers.map(([stage, title, color, art, notes]) => {
+    const card = {
+      id: crypto.randomUUID(),
+      stage,
+      position: (seen[stage] = (seen[stage] ?? -1) + 1),
+      title,
+      color,
+      notes,
+      image: art ? `art-${art}-${color}` : null,
+    };
+    return [card.id, card];
+  }));
+}
+
+// Example covers are drawn as SVG, so the demo needs no image files.
+function demoArt(kind, hex) {
+  const W = 320;
+  const H = 180;
+  let body = '';
+  if (kind === 'rings') {
+    body = `<rect width="${W}" height="${H}" fill="${hex}"/><rect width="${W}" height="${H}" fill="url(#g)"/>`
+      + Array.from({ length: 9 }, (_, i) => `<circle cx="226" cy="116" r="${12 + i * 17}" fill="none" stroke="#fff" stroke-opacity="${(0.6 - i * 0.055).toFixed(2)}" stroke-width="1.5"/>`).join('');
+  } else if (kind === 'waves') {
+    body = `<rect width="${W}" height="${H}" fill="#1e232c"/><rect width="${W}" height="${H}" fill="${hex}" opacity=".35"/>`
+      + Array.from({ length: 7 }, (_, k) => {
+        let d = '';
+        for (let x = 0; x <= W; x += 8) d += `${x ? 'L' : 'M'}${x} ${(48 + k * 14 + 11 * Math.sin(x / 26 + k * 0.6)).toFixed(1)}`;
+        return `<path d="${d}" fill="none" stroke="#fff" stroke-opacity="${(0.25 + k * 0.08).toFixed(2)}" stroke-width="1.4"/>`;
+      }).join('');
+  } else if (kind === 'dots') {
+    let seed = 7;
+    const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    body = `<rect width="${W}" height="${H}" fill="#f3f0ea"/><path d="M28 150 L292 44" stroke="#2b2925" stroke-opacity=".5" stroke-width="1.5"/>`
+      + Array.from({ length: 46 }, () => {
+        const x = 28 + rand() * 264;
+        const y = 150 - (x - 28) * 0.4 + (rand() - 0.5) * 46;
+        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="${hex}" fill-opacity=".75"/>`;
+      }).join('');
+  } else if (kind === 'bars') {
+    const heights = [38, 52, 47, 70, 84, 78, 102, 118, 128];
+    body = `<rect width="${W}" height="${H}" fill="#f3f0ea"/><path d="M24 156 H296" stroke="#2b2925" stroke-opacity=".35"/>`
+      + heights.map((h, i) => `<rect x="${32 + i * 29}" y="${156 - h}" width="19" height="${h}" rx="3" fill="${hex}" fill-opacity="${(0.45 + i * 0.065).toFixed(2)}"/>`).join('');
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W * 2}" height="${H * 2}">`
+    + '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient></defs>'
+    + `${body}</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+async function demoImage(id) {
+  const art = id.match(/^art-(\w+)-(\w+)$/);
+  if (art) return demoArt(art[1], COLORS[art[2]] || COLORS.sage);
+  const url = store.get(DEMO_IMG + id);
+  if (!url) throw new Error('missing image');
+  return url;
+}
+
+async function saveDemoImage(file) {
+  const blob = await shrink(file, 900, 0.8);
+  const url = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+  const id = crypto.randomUUID();
+  localStorage.setItem(DEMO_IMG + id, url); // throws when the browser's storage is full
+  imageUrls.set(id, Promise.resolve(url));
+  return id;
+}
+
+function pruneDemoImages() {
+  try {
+    const used = new Set([...cards.values()].map((c) => c.image));
+    Object.keys(localStorage)
+      .filter((key) => key.startsWith(DEMO_IMG) && !used.has(key.slice(DEMO_IMG.length)))
+      .forEach((key) => localStorage.removeItem(key));
+  } catch {}
+}
+
+// ---------- What is this? (demo) ----------
+
+const info = $('info');
+const infoSheet = $('info-sheet');
+let infoTimer = 0;
+
+function openInfo() {
+  if (!info.hidden) return;
+  store.set('board.demo.seen', '1');
+  info.hidden = false;
+  if (!CALM) {
+    infoSheet.animate([{ opacity: 0, transform: 'translateY(14px) scale(0.98)' }, { opacity: 1, transform: 'none' }], { duration: 460, easing: 'cubic-bezier(0.2, 0.9, 0.25, 1)' });
+    info.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: EASE });
+  }
+  runLine();
+}
+
+function closeInfo() {
+  if (info.hidden) return;
+  clearInterval(infoTimer);
+  if (CALM) {
+    info.hidden = true;
+    return;
+  }
+  infoSheet.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(10px) scale(0.98)' }], { duration: 260, easing: EASE, fill: 'forwards' });
+  info.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, easing: EASE, fill: 'forwards' }).onfinish = () => {
+    info.hidden = true;
+    info.getAnimations().forEach((a) => a.cancel());
+    infoSheet.getAnimations().forEach((a) => a.cancel());
+  };
+}
+
+// A tiny paper hops through the eight stages, then starts over in a new colour.
+function runLine() {
+  const line = $('info-line');
+  const paper = $('info-paper');
+  const label = $('info-stage');
+  const slots = [...line.querySelectorAll('.info-slot')];
+  const palette = Object.values(COLORS);
+  let step = 0;
+  let round = 0;
+
+  const show = () => {
+    infoSheet.style.setProperty('--c', palette[round % palette.length]);
+    line.style.setProperty('--c', palette[round % palette.length]);
+    slots.forEach((slot, i) => slot.classList.toggle('passed', i <= step));
+    paper.style.transform = `translateX(calc(${step} * (100% + 6px)))`;
+    paper.classList.toggle('done', step === STAGES.length - 1);
+    label.textContent = `${String(step + 1).padStart(2, '0')} · ${STAGES[step].name}`;
+    if (!CALM) {
+      paper.firstElementChild.animate(
+        [{ transform: 'none' }, { transform: 'translateY(-8px) rotate(-4deg)', offset: 0.45 }, { transform: 'none' }],
+        { duration: 560, easing: 'ease-out' },
+      );
+    }
+  };
+
+  const tick = () => {
+    if (step < STAGES.length - 1) {
+      step++;
+      show();
+      return;
+    }
+    // Submitted: fade out, slip back to the start, and go again.
+    paper.style.opacity = '0';
+    setTimeout(() => {
+      step = 0;
+      round++;
+      paper.style.transition = 'none';
+      paper.style.transform = 'translateX(0)';
+      void paper.offsetWidth;
+      paper.style.transition = '';
+      paper.style.opacity = '1';
+      show();
+    }, 320);
+  };
+
+  clearInterval(infoTimer);
+  step = 0;
+  paper.style.opacity = '1';
+  show();
+  infoTimer = setInterval(tick, 1150);
+}
+
+$('info-btn').addEventListener('click', openInfo);
+$('info-done-btn').addEventListener('click', closeInfo);
+info.addEventListener('pointerdown', (e) => {
+  if (e.target === info) closeInfo();
+});
+$('reset-demo-btn').addEventListener('click', () => {
+  closeInfo();
+  cards = demoSeed();
+  cacheBoard();
+  render();
+});
+
+token || demo ? showBoard() : showLogin();
