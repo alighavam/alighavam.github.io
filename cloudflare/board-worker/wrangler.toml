@@ -1,0 +1,18 @@
+name = "paper-board"
+main = "worker.js"
+compatibility_date = "2025-09-01"
+
+# Gives the API its own subdomain; Cloudflare creates the DNS record on deploy.
+routes = [
+  { pattern = "board-api.alighavam.com", custom_domain = true }
+]
+
+[vars]
+ALLOWED_ORIGINS = "https://alighavam.com,https://www.alighavam.com,http://localhost:8000,http://127.0.0.1:8000,http://localhost:4173"
+
+# Create once: wrangler d1 create paper-board
+# Paste the returned database_id below, then wrangler deploy
+[[d1_databases]]
+binding = "DB"
+database_name = "paper-board"
+database_id = "b43465bb-aca7-4e31-9d6f-2012317b7d96"

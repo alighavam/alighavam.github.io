@@ -15,3 +15,7 @@ esp32-lab-camera/esp32_lab_camera/secrets.h
 **/.wrangler/
 cloudflare/*.json
 cloudflare/**/*.json
+
+# Local worker secrets
+.dev.vars
+**/.dev.vars
