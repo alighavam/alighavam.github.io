@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark light">
+    <meta name="description" content="Research tools by Ali Ghavampour: MyCite, a local-first reference manager, and Paper Assembly Line, a board that tracks every paper from idea to submitted.">
+    <title>Tools — Ali Ghavampour</title>
+    <link rel="canonical" href="https://alighavam.com/tools/">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://alighavam.com/tools/">
+    <meta property="og:title" content="Tools — Ali Ghavampour">
+    <meta property="og:description" content="MyCite and Paper Assembly Line: small, fast tools for doing research.">
+    <meta name="twitter:card" content="summary">
+
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23e0a45c'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='16' font-weight='bold' text-anchor='middle' fill='%23241703'%3EA%3C/text%3E%3C/svg%3E">
+
+    <!-- Follow the theme picked on the main site; otherwise the system setting. -->
+    <script>
+        (function () {
+            var saved = null;
+            try { saved = localStorage.getItem('theme'); } catch (e) {}
+            var prefersLight = window.matchMedia &&
+                window.matchMedia('(prefers-color-scheme: light)').matches;
+            document.documentElement.dataset.theme = saved || (prefersLight ? 'light' : 'dark');
+        })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* This page deliberately does not use ../style.css: it has its own look. */
+        :root {
+            --bg:       #09090b;
+            --grid:     rgba(255, 255, 255, 0.055);
+            --card:     rgba(255, 255, 255, 0.025);
+            --line:     rgba(255, 255, 255, 0.09);
+            --line-hi:  rgba(255, 255, 255, 0.2);
+            --text:     #fafafa;
+            --muted:    #a1a1aa;
+            --faint:    #71717a;
+            --chip:     rgba(255, 255, 255, 0.06);
+            --well:     rgba(255, 255, 255, 0.03);
+            --skel:     rgba(255, 255, 255, 0.09);
+            --btn-bg:   #fafafa;
+            --btn-ink:  #09090b;
+
+            --cite:     #e3b98a;   /* MyCite's warm paper tone */
+            --sage:     #7fa48a;   /* board colours, taken from board.js */
+            --blue:     #6e9cc4;
+            --clay:     #c9805f;
+
+            --ease:     cubic-bezier(0.22, 1, 0.36, 1);
+            --font:     "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --mono:     "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+            color-scheme: dark;
+        }
+        :root[data-theme="light"] {
+            --bg:       #fafafa;
+            --grid:     rgba(0, 0, 0, 0.06);
+            --card:     rgba(255, 255, 255, 0.7);
+            --line:     rgba(0, 0, 0, 0.09);
+            --line-hi:  rgba(0, 0, 0, 0.22);
+            --text:     #09090b;
+            --muted:    #52525b;
+            --faint:    #71717a;
+            --chip:     rgba(0, 0, 0, 0.05);
+            --well:     rgba(0, 0, 0, 0.025);
+            --skel:     rgba(0, 0, 0, 0.08);
+            --btn-bg:   #09090b;
+            --btn-ink:  #fafafa;
+            --cite:     #a8733f;
+            color-scheme: light;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 16px;
+            line-height: 1.55;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Faint grid that fades out toward the edges */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background-image:
+                linear-gradient(var(--grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 30%, transparent 100%);
+            -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 30%, transparent 100%);
+        }
+
+        a { color: inherit; text-decoration: none; }
+
+        .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+
+        /* --- Top bar --------------------------------------------------------- */
+        .bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            font-family: var(--mono);
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+        .back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.4rem 0.7rem 0.4rem 0.55rem;
+            margin-left: -0.55rem;
+            border-radius: 999px;
+            transition: color 0.2s, background 0.2s;
+        }
+        .back svg { transition: transform 0.3s var(--ease); }
+        .back:hover { color: var(--text); background: var(--chip); }
+        .back:hover svg { transform: translateX(-3px); }
+        .path { color: var(--faint); }
+
+        /* --- Hero ------------------------------------------------------------ */
+        .hero { padding: 4.5rem 0 3.5rem; }
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.3rem 0.75rem;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            font-family: var(--mono);
+            font-size: 0.76rem;
+            color: var(--muted);
+            background: var(--card);
+        }
+        .eyebrow .dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--sage);
+            box-shadow: 0 0 0 0 var(--sage);
+            animation: ping 2.4s var(--ease) infinite;
+        }
+        h1 {
+            margin: 1.25rem 0 0.9rem;
+            font-size: clamp(2.4rem, 6.5vw, 4.1rem);
+            line-height: 1.02;
+            letter-spacing: -0.045em;
+            font-weight: 600;
+        }
+        h1 .soft { color: var(--faint); }
+        .lede {
+            max-width: 30rem;
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--muted);
+        }
+
+        /* --- Tool cards ------------------------------------------------------ */
+        .tools {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1.25rem;
+            padding-bottom: 5rem;
+        }
+
+        .tool {
+            --accent: var(--cite);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: var(--card);
+            overflow: hidden;
+            isolation: isolate;
+            transition: border-color 0.35s, transform 0.5s var(--ease);
+            animation: rise 0.8s var(--ease) both;
+        }
+        .tool:nth-child(2) { --accent: var(--sage); animation-delay: 0.08s; }
+        .tool:hover { border-color: var(--line-hi); transform: translateY(-3px); }
+
+        /* Cursor spotlight; --x/--y are set by the script at the bottom. */
+        .tool::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background: radial-gradient(420px circle at var(--x, 50%) var(--y, 0%),
+                color-mix(in srgb, var(--accent) 16%, transparent), transparent 65%);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .tool:hover::before { opacity: 1; }
+
+        .preview {
+            position: relative;
+            height: 228px;
+            margin: 10px 10px 0;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--well);
+            overflow: hidden;
+        }
+
+        .body { display: flex; flex-direction: column; flex: 1; padding: 1.5rem 1.6rem 1.6rem; }
+        .name {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin: 0;
+            font-size: 1.35rem;
+            letter-spacing: -0.02em;
+            font-weight: 600;
+        }
+        .name .mark {
+            width: 10px; height: 10px;
+            border-radius: 3px;
+            background: var(--accent);
+        }
+        .tagline {
+            margin: 0.35rem 0 0.85rem;
+            font-size: 1.02rem;
+            font-weight: 500;
+            color: var(--accent);
+            letter-spacing: -0.01em;
+        }
+        .desc { margin: 0; color: var(--muted); font-size: 0.97rem; }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin: 1.1rem 0 1.5rem;
+            padding: 0;
+            list-style: none;
+        }
+        .chips li {
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            background: var(--chip);
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
+
+        .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: auto; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            height: 40px;
+            padding: 0 1.05rem;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            font-weight: 500;
+            transition: transform 0.25s var(--ease), background 0.2s, border-color 0.2s, box-shadow 0.3s;
+        }
+        .btn svg { transition: transform 0.3s var(--ease); }
+        .btn:hover svg { transform: translateX(3px); }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary { background: var(--btn-bg); color: var(--btn-ink); }
+        .btn-primary:hover { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 30%, transparent); }
+        .btn-ghost { border: 1px solid var(--line); color: var(--text); }
+        .btn-ghost:hover { border-color: var(--line-hi); background: var(--chip); }
+        .btn:focus-visible, .back:focus-visible { outline: 2px solid var(--accent, var(--sage)); outline-offset: 2px; }
+
+        /* --- MyCite preview: a tiny library syncing to Drive ----------------- */
+        .lib { position: absolute; inset: 18px 18px auto; display: grid; gap: 8px; }
+        .ref {
+            display: grid;
+            grid-template-columns: 26px 1fr auto;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 11px;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            background: var(--card);
+            animation: scan 6s var(--ease) infinite;
+        }
+        .ref:nth-child(2) { animation-delay: 2s; }
+        .ref:nth-child(3) { animation-delay: 4s; }
+        .ref .pdf {
+            height: 30px;
+            border-radius: 4px;
+            background: color-mix(in srgb, var(--accent) 22%, transparent);
+            border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+        }
+        .ref .lines { display: grid; gap: 6px; }
+        .ref .lines i { display: block; height: 6px; border-radius: 3px; background: var(--skel); }
+        .ref .lines i:first-child { width: 85%; }
+        .ref .lines i:last-child { width: 50%; opacity: 0.6; }
+        .ref .year { font-family: var(--mono); font-size: 0.66rem; color: var(--faint); }
+
+        .sync {
+            position: absolute;
+            right: 16px; bottom: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.25rem 0.6rem 0.25rem 0.45rem;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: var(--bg);
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            color: var(--muted);
+        }
+        .sync svg { color: var(--accent); animation: spin 3s linear infinite; }
+
+        /* --- Board preview: a card working its way down the line ------------- */
+        .line {
+            position: absolute;
+            inset: 16px 16px 16px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .col {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 8px 6px;
+            border-radius: 8px;
+            background: var(--well);
+            border: 1px solid var(--line);
+        }
+        .col b {
+            font-family: var(--mono);
+            font-size: 0.6rem;
+            font-weight: 500;
+            color: var(--faint);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 2px 2px;
+        }
+        .paper {
+            height: 26px;
+            border-radius: 5px;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--c, var(--sage));
+        }
+        .mover { background: color-mix(in srgb, var(--bg) 70%, var(--c)); }
+        .paper.c2 { --c: var(--blue); }
+        .paper.c3 { --c: var(--clay); }
+        /* The travelling card: hops one column right every beat. */
+        .mover {
+            position: absolute;
+            top: 80px;   /* second slot, right under each column's card */
+            left: 23px;
+            width: calc((100% - 32px - 24px) / 4 - 14px);
+            --c: var(--clay);
+            box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.45);
+            animation: travel 8s var(--ease) infinite;
+        }
+
+        /* --- Footer ---------------------------------------------------------- */
+        .foot {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 1.5rem 0 2.5rem;
+            border-top: 1px solid var(--line);
+            font-family: var(--mono);
+            font-size: 0.78rem;
+            color: var(--faint);
+        }
+        .foot a:hover { color: var(--text); }
+
+        /* --- Motion ---------------------------------------------------------- */
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(14px); }
+        }
+        @keyframes ping {
+            0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--sage) 60%, transparent); }
+            70%, 100% { box-shadow: 0 0 0 7px transparent; }
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes scan {
+            0%, 30%, 100% { border-color: var(--line); transform: none; }
+            8%, 22% {
+                border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+                transform: translateX(4px);
+            }
+        }
+        /* % is the mover's own width (column - 14px); +22px per hop makes it one column + one gap. */
+        @keyframes travel {
+            0%, 14%   { transform: translateX(0); }
+            25%, 39%  { transform: translateX(calc(100% + 22px)); }
+            50%, 64%  { transform: translateX(calc(200% + 44px)); }
+            75%, 92%  { transform: translateX(calc(300% + 66px)); opacity: 1; }
+            97%       { transform: translateX(calc(300% + 66px)); opacity: 0; }
+            98%       { transform: translateX(0); opacity: 0; }
+            100%      { transform: translateX(0); opacity: 1; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation: none !important; transition: none !important; }
+        }
+
+        @media (max-width: 760px) {
+            .hero { padding: 2.5rem 0 2.5rem; }
+            .tools { grid-template-columns: 1fr; padding-bottom: 3.5rem; }
+            .body { padding: 1.25rem 1.25rem 1.35rem; }
+        }
+    </style>
+
+    <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "cf1b63c6e6d4436e96618b4b5f270d7c"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+
+    <div class="wrap">
+        <nav class="bar">
+            <a href="../" class="back">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+                alighavam.com
+            </a>
+            <span class="path">~/tools</span>
+        </nav>
+
+        <header class="hero">
+            <span class="eyebrow"><span class="dot"></span>free · in your browser</span>
+            <h1>Tools for doing research.<br><span class="soft">Without the busywork.</span></h1>
+            <p class="lede">Small, fast apps I built for my own research workflow. Open one and get going.</p>
+        </header>
+
+        <main class="tools">
+
+            <!-- MyCite -->
+            <article class="tool">
+                <div class="preview" aria-hidden="true">
+                    <div class="lib">
+                        <div class="ref"><span class="pdf"></span><span class="lines"><i></i><i></i></span><span class="year">2026</span></div>
+                        <div class="ref"><span class="pdf"></span><span class="lines"><i></i><i></i></span><span class="year">2024</span></div>
+                        <div class="ref"><span class="pdf"></span><span class="lines"><i></i><i></i></span><span class="year">2019</span></div>
+                    </div>
+                    <span class="sync">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2"/><path d="M18.5 2v4h-4M5.5 22v-4h4"/></svg>
+                        synced to your Drive
+                    </span>
+                </div>
+                <div class="body">
+                    <h2 class="name"><span class="mark"></span>MyCite</h2>
+                    <p class="tagline">Your references. Your Drive. Nobody else's.</p>
+                    <p class="desc">A local-first reference manager. Your library lives in your browser and syncs through your own Google Drive. No accounts, no servers, no lock-in.</p>
+                    <ul class="chips">
+                        <li>local-first</li>
+                        <li>google drive sync</li>
+                        <li>installable</li>
+                    </ul>
+                    <div class="actions">
+                        <a class="btn btn-primary" href="../mycite/">
+                            Open MyCite
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        </a>
+                        <a class="btn btn-ghost" href="../mycite/privacy.html">Privacy</a>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Paper Assembly Line -->
+            <article class="tool">
+                <div class="preview" aria-hidden="true">
+                    <div class="line">
+                        <div class="col"><b>Concept</b><span class="paper"></span></div>
+                        <div class="col"><b>Figures</b><span class="paper c2"></span></div>
+                        <div class="col"><b>Review</b><span class="paper"></span></div>
+                        <div class="col"><b>Submitted</b><span class="paper c3"></span></div>
+                    </div>
+                    <span class="paper mover"></span>
+                </div>
+                <div class="body">
+                    <h2 class="name"><span class="mark"></span>Paper Assembly Line</h2>
+                    <p class="tagline">Every paper, from idea to submitted.</p>
+                    <p class="desc">A board for your papers. Each one sits at its stage, from concept to co-author review to out the door. One glance shows what's moving and what's stuck.</p>
+                    <ul class="chips">
+                        <li>8 stages</li>
+                        <li>drag &amp; drop</li>
+                        <li>covers + notes</li>
+                    </ul>
+                    <div class="actions">
+                        <a class="btn btn-primary" href="../board/#demo">
+                            Try the demo
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        </a>
+                        <a class="btn btn-ghost" href="../board/">Sign in</a>
+                    </div>
+                </div>
+            </article>
+
+        </main>
+
+        <footer class="foot">
+            <span>more when I need them.</span>
+            <a href="../">← back to alighavam.com</a>
+        </footer>
+    </div>
+
+    <script>
+        // Spotlight follows the cursor across each card.
+        document.querySelectorAll('.tool').forEach(function (card) {
+            card.addEventListener('pointermove', function (e) {
+                var r = card.getBoundingClientRect();
+                card.style.setProperty('--x', (e.clientX - r.left) + 'px');
+                card.style.setProperty('--y', (e.clientY - r.top) + 'px');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -823,4 +823,6 @@ body::before {
 @media (max-width: 420px) {
     .btn, .btn-cv { padding-left: 0.8rem; padding-right: 0.8rem; }
     .card-grid { grid-template-columns: 1fr; }
+    /* Five links have to fit one row on a phone */
+    .nav-links a { padding: 0 0.4rem; font-size: 0.86rem; }
 }
