@@ -35,7 +35,6 @@
         /* This page deliberately does not use ../style.css: it has its own look. */
         :root {
             --bg:       #09090b;
-            --grid:     rgba(255, 255, 255, 0.055);
             --card:     rgba(255, 255, 255, 0.025);
             --line:     rgba(255, 255, 255, 0.09);
             --line-hi:  rgba(255, 255, 255, 0.2);
@@ -60,7 +59,6 @@
         }
         :root[data-theme="light"] {
             --bg:       #fafafa;
-            --grid:     rgba(0, 0, 0, 0.06);
             --card:     rgba(255, 255, 255, 0.7);
             --line:     rgba(0, 0, 0, 0.09);
             --line-hi:  rgba(0, 0, 0, 0.22);
@@ -89,19 +87,19 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Faint grid that fades out toward the edges */
+        /* Film grain, the same tile and strength as the main site's (style.css,
+           BACKGROUND GRAIN): white specks, inverted to black in light mode. */
         body::before {
             content: "";
             position: fixed;
             inset: 0;
             z-index: -1;
-            background-image:
-                linear-gradient(var(--grid) 1px, transparent 1px),
-                linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-            background-size: 48px 48px;
-            mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 30%, transparent 100%);
-            -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 30%, transparent 100%);
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 -0.5'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)'/%3E%3C/svg%3E");
+            background-size: 100px;
+            opacity: 0.23;
         }
+        :root[data-theme="light"] body::before { filter: invert(1); }
 
         a { color: inherit; text-decoration: none; }
 
@@ -133,35 +131,16 @@
 
         /* --- Hero ------------------------------------------------------------ */
         .hero { padding: 4.5rem 0 3.5rem; }
-        .eyebrow {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.3rem 0.75rem;
-            border: 1px solid var(--line);
-            border-radius: 999px;
-            font-family: var(--mono);
-            font-size: 0.76rem;
-            color: var(--muted);
-            background: var(--card);
-        }
-        .eyebrow .dot {
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: var(--sage);
-            box-shadow: 0 0 0 0 var(--sage);
-            animation: ping 2.4s var(--ease) infinite;
-        }
         h1 {
-            margin: 1.25rem 0 0.9rem;
-            font-size: clamp(2.4rem, 6.5vw, 4.1rem);
+            margin: 0 0 0.9rem;
+            font-size: clamp(2.2rem, 5.6vw, 3.6rem);
             line-height: 1.02;
             letter-spacing: -0.045em;
             font-weight: 600;
         }
         h1 .soft { color: var(--faint); }
         .lede {
-            max-width: 30rem;
+            max-width: 36rem;
             margin: 0;
             font-size: 1.1rem;
             color: var(--muted);
@@ -385,10 +364,6 @@
         @keyframes rise {
             from { opacity: 0; transform: translateY(14px); }
         }
-        @keyframes ping {
-            0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--sage) 60%, transparent); }
-            70%, 100% { box-shadow: 0 0 0 7px transparent; }
-        }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes scan {
             0%, 30%, 100% { border-color: var(--line); transform: none; }
@@ -433,9 +408,8 @@
         </nav>
 
         <header class="hero">
-            <span class="eyebrow"><span class="dot"></span>free · in your browser</span>
-            <h1>Tools for doing research.<br><span class="soft">Without the busywork.</span></h1>
-            <p class="lede">Small, fast apps I built for my own research workflow. Open one and get going.</p>
+            <h1>Tools I made for myself at first,<br><span class="soft">but now would like to share.</span></h1>
+            <p class="lede">I will place these cleanly on GitHub and will share the repos here.</p>
         </header>
 
         <main class="tools">
@@ -455,12 +429,11 @@
                 </div>
                 <div class="body">
                     <h2 class="name"><span class="mark"></span>MyCite</h2>
-                    <p class="tagline">Your references. Your Drive. Nobody else's.</p>
-                    <p class="desc">A local-first reference manager. Your library lives in your browser and syncs through your own Google Drive. No accounts, no servers, no lock-in.</p>
+                    <p class="tagline">Paperpile-inspired reference manager, but free.</p>
+                    <p class="desc">Your library lives in your browser and syncs through your own Google Drive. No accounts, no servers, no lock-in. It's easy to migrate to MyCite, and easy to migrate out of it if you desire to 😉</p>
                     <ul class="chips">
-                        <li>local-first</li>
                         <li>google drive sync</li>
-                        <li>installable</li>
+                        <li>private</li>
                     </ul>
                     <div class="actions">
                         <a class="btn btn-primary" href="../mycite/">
@@ -485,12 +458,11 @@
                 </div>
                 <div class="body">
                     <h2 class="name"><span class="mark"></span>Paper Assembly Line</h2>
-                    <p class="tagline">Every paper, from idea to submitted.</p>
+                    <p class="tagline">Track and plan for every paper. From idea to submitted.</p>
                     <p class="desc">A board for your papers. Each one sits at its stage, from concept to co-author review to out the door. One glance shows what's moving and what's stuck.</p>
                     <ul class="chips">
-                        <li>8 stages</li>
-                        <li>drag &amp; drop</li>
-                        <li>covers + notes</li>
+                        <li>minimalistic</li>
+                        <li>trello board</li>
                     </ul>
                     <div class="actions">
                         <a class="btn btn-primary" href="../board/#demo">
