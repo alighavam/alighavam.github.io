@@ -1,3 +1,4 @@
+# Serves both the paper board and the Songbook (alighavam.com/songs/).
 name = "paper-board"
 main = "worker.js"
 compatibility_date = "2025-09-01"

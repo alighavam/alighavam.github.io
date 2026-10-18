@@ -1,40 +1,33 @@
 // Songbook: a personal tracker for guitar songs. Want to Learn → Practicing → Learned.
 //
-// No backend. Everything lives in this browser's localStorage as one readable
-// JSON object (Export downloads exactly this; Import accepts it back):
+// Your songs live on the same Cloudflare Worker + D1 database as the paper board
+// (cloudflare/board-worker), so every device sees the same songbook. Each browser
+// also keeps a copy, so it opens instantly and keeps working offline; edits made
+// offline are queued and sent when the connection is back.
+// The demo (no password) never talks to the Worker; it lives in localStorage.
+//
+// A song looks like this (Export downloads { "app", "version", "songs": [...] }):
 //
 //   {
-//     "app": "songbook",
-//     "version": 1,
-//     "songs": [
-//       {
-//         "id": "s_k3j9x2ab",
-//         "title": "Wonderwall",           // the only required field
-//         "artist": "Oasis",
-//         "list": "practicing",            // "want" | "practicing" | "learned"
-//         "chords": "https://…",           // chords / tabs page
-//         "tutorial": "https://…",         // favourite YouTube tutorial
-//         "key": "F#m",
-//         "capo": 2,                       // number, or null
-//         "tuning": "Standard",
-//         "difficulty": 1,                 // 1–3, or null
-//         "notes": "Strum: D D U U D U",
-//         "added": "2026-10-18",
-//         "learned": null,                 // date it moved to Learned
-//         "example": true                  // only on the sample songs
-//       }
-//     ]
+//     "id": "s_k3j9x2ab",
+//     "title": "Wonderwall",           // the only required field
+//     "artist": "Oasis",
+//     "list": "practicing",            // "want" | "practicing" | "learned"
+//     "position": 3,                   // order within its list, smallest first
+//     "chords": "https://…",           // chords / tabs page
+//     "tutorial": "https://…",         // favourite YouTube tutorial
+//     "key": "F#m",
+//     "capo": 2,                       // number, or null
+//     "tuning": "Standard",
+//     "difficulty": 1,                 // 1–3, or null
+//     "notes": "Strum: D D U U D U",
+//     "added": "2026-10-18",
+//     "learned": null,                 // date it moved to Learned
+//     "example": true                  // only on the sample songs
 //   }
-//
-// Within a list, songs show in the order they have in the array.
-//
-// About the password: like the paper board, it separates your songbook from the
-// public demo. It is checked here in the browser, so it is a lock on the door, not
-// encryption. Your songs never leave this device unless you export them.
-// To change it, put the SHA-256 of the new password below. In any browser console:
-//   crypto.subtle.digest('SHA-256', new TextEncoder().encode('new password'))
-//     .then((b) => console.log([...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join('')))
-const PASSWORD_SHA256 = '2466624a287ebd0fbc679c965ad8aabe2b42585ec1f76345e635a95eaf38d61d';
+
+const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
+const API = LOCAL ? 'http://localhost:8787' : 'https://board-api.alighavam.com';
 
 const LISTS = [
   { id: 'want', name: 'Want to Learn', short: 'Want', empty: 'Songs you’d love to play.' },
@@ -43,9 +36,12 @@ const LISTS = [
 ];
 
 const KEYS = {
-  data: 'songbook.data',        // your songs
+  token: 'songbook.token',      // sign-in, valid for 180 days
+  cache: 'songbook.cache',      // this device's copy of your songs
+  pending: 'songbook.pending',  // edits not yet on the server
+  seeded: 'songbook.seeded',    // examples were offered once on this device
+  legacy: 'songbook.data',      // songs from the earlier browser-only version
   demo: 'songbook.demo',        // demo songs (kept separate)
-  unlocked: 'songbook.unlocked',
   mode: 'songbook.mode',
   seen: 'songbook.demo.seen',
   tab: 'songbook.tab',
@@ -79,8 +75,9 @@ const store = {
 
 // ---------- State ----------
 
-let demo = false;
-let songs = [];
+let token = store.get(KEYS.token);
+let demo = !token && (location.hash === '#demo' || store.get(KEYS.mode) === 'demo');
+let songs = [];          // always sorted by position
 let query = '';
 let tab = LISTS.some((l) => l.id === store.get(KEYS.tab)) ? store.get(KEYS.tab) : 'want';
 let enterId = null;      // card to animate in on the next render
@@ -126,6 +123,7 @@ function safeUrl(raw) {
 
 const listName = (id) => LISTS.find((l) => l.id === id).name;
 const findSong = (id) => songs.find((s) => s.id === id);
+const plural = (n) => `${n} song${n === 1 ? '' : 's'}`;
 
 // ---------- Data ----------
 
@@ -143,16 +141,18 @@ function toDifficulty(v) {
 }
 
 // Turns anything song-shaped (e.g. hand-edited JSON) into a clean song, or null.
-function normalize(s) {
+function normalize(s, fallbackPosition = 0) {
   if (!s || typeof s !== 'object') return null;
   const title = text(s.title).trim();
   if (!title) return null;
   const list = LISTS.some((l) => l.id === s.list) ? s.list : 'want';
+  const id = text(s.id).trim();
   const song = {
-    id: text(s.id).trim() || newId(),
-    title,
+    id: /^[\w-]{1,64}$/.test(id) ? id : newId(),
+    title: title.slice(0, 200),
     artist: text(s.artist).trim(),
     list,
+    position: Number.isFinite(s.position) ? s.position : fallbackPosition,
     chords: text(s.chords).trim(),
     tutorial: text(s.tutorial).trim(),
     key: text(s.key).trim(),
@@ -172,37 +172,212 @@ function parseData(data) {
   const raw = Array.isArray(data) ? data : data && Array.isArray(data.songs) ? data.songs : null;
   if (!raw) throw new Error('Not Songbook data');
   const ids = new Set();
-  return raw.map(normalize).filter(Boolean).map((s) => {
+  const list = raw.map((s, i) => normalize(s, i)).filter(Boolean).map((s) => {
     if (ids.has(s.id)) s.id = newId();
     ids.add(s.id);
     return s;
   });
+  return sorted(list);
 }
 
-const storageKey = () => (demo ? KEYS.demo : KEYS.data);
-
-function load() {
-  const raw = store.get(storageKey());
-  if (raw == null) return { songs: exampleSongs(), fresh: true };
+function readSongs(key) {
   try {
-    return { songs: parseData(JSON.parse(raw)) };
+    return parseData(JSON.parse(store.get(key) || '[]'));
   } catch {
-    // Don't lose a hand-edit gone wrong: keep a copy aside before starting over.
-    store.set(storageKey() + '.broken', raw);
-    toast('Saved data couldn’t be read; a copy was kept.');
-    return { songs: [] };
+    return [];
   }
 }
+
+const sorted = (list) => list.sort((a, b) => a.position - b.position);
 
 function snapshot() {
   return { app: 'songbook', version: 1, songs };
 }
 
-function save() {
-  if (!store.set(storageKey(), JSON.stringify(snapshot(), null, 2))) {
-    toast('Couldn’t save. Is storage full or blocked?');
+// ---------- Server ----------
+
+async function api(path, { method = 'GET', body } = {}) {
+  const headers = { Authorization: `Bearer ${token}` };
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  const payload = body === undefined ? undefined : JSON.stringify(body);
+  const res = await fetch(API + path, {
+    method,
+    headers,
+    body: payload,
+    // Lets a save finish even if the tab is closing (browsers cap this at 64 KB).
+    keepalive: method !== 'GET' && (payload || '').length < 60_000,
+  });
+  if (res.status === 401) {
+    signOut();
+    throw new Error('unauthorized');
+  }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res;
+}
+
+// ---------- Saving (optimistic, queued, retried) ----------
+
+const dirty = new Set();     // song ids to PUT
+const removed = new Set();   // song ids to DELETE
+let replaceAll = false;      // PUT the whole list (import, clear examples)
+let flushTimer = 0;
+let flushing = false;
+let failures = 0;
+
+const hasPending = () => dirty.size > 0 || removed.size > 0 || replaceAll;
+
+// Call after any change. ids = songs to send; replace = send the whole list.
+function persist(ids = [], { replace = false, delay = 0 } = {}) {
+  keepCopy();
+  if (demo) return;
+  if (replace) {
+    replaceAll = true;
+    dirty.clear();
+    removed.clear();
+  } else {
+    ids.forEach((id) => (findSong(id) ? dirty.add(id) : (dirty.delete(id), removed.add(id))));
+  }
+  rememberPending();
+  setSync('saving');
+  clearTimeout(flushTimer);
+  flushTimer = setTimeout(flush, delay);
+}
+
+async function flush() {
+  if (flushing || !token || demo) return;
+  flushing = true;
+  try {
+    if (replaceAll) {
+      replaceAll = false;
+      try {
+        await api('/songs', { method: 'PUT', body: { songs } });
+      } catch (err) {
+        replaceAll = true;
+        throw err;
+      }
+    }
+    for (const id of [...removed]) {
+      await api(`/songs/${id}`, { method: 'DELETE' });
+      removed.delete(id);
+    }
+    for (const id of [...dirty]) {
+      dirty.delete(id);
+      const song = findSong(id);
+      if (!song) continue;
+      try {
+        await api(`/songs/${id}`, { method: 'PUT', body: song });
+      } catch (err) {
+        dirty.add(id);
+        throw err;
+      }
+    }
+    failures = 0;
+  } catch {
+    flushing = false;
+    rememberPending();
+    if (!token) return;
+    failures++;
+    setSync('offline');
+    clearTimeout(flushTimer);
+    flushTimer = setTimeout(flush, Math.min(30_000, 1000 * 2 ** failures));
+    return;
+  } finally {
+    flushing = false;
+  }
+  rememberPending();
+  if (hasPending()) return flush();
+  setSync('idle');
+}
+
+// The queue survives reloads, so offline edits on a phone aren't lost.
+function rememberPending() {
+  store.set(KEYS.pending, hasPending()
+    ? JSON.stringify({ dirty: [...dirty], removed: [...removed], replaceAll })
+    : null);
+}
+
+function restorePending() {
+  try {
+    const p = JSON.parse(store.get(KEYS.pending) || 'null');
+    if (!p) return;
+    p.dirty?.forEach((id) => dirty.add(id));
+    p.removed?.forEach((id) => removed.add(id));
+    replaceAll = !!p.replaceAll;
+  } catch {}
+}
+
+function keepCopy() {
+  if (!store.set(demo ? KEYS.demo : KEYS.cache, JSON.stringify(snapshot()))) {
+    toast('Couldn’t save a copy on this device.');
   }
 }
+
+function setSync(state) {
+  const dot = $('sync');
+  dot.dataset.state = state;
+  dot.title = demo
+    ? 'Saved in this browser'
+    : { idle: 'Synced', saving: 'Saving…', offline: 'Offline. Changes will sync when you’re back.' }[state];
+  dot.setAttribute('aria-label', dot.title);
+}
+
+// ---------- Loading from the server ----------
+
+let refreshing = false;
+let lastRefresh = 0;
+
+// No polling: the songbook syncs when it's opened or returned to,
+// to stay light on the account-wide Workers request allowance.
+async function refresh() {
+  if (!token || demo || refreshing || document.hidden || Date.now() - lastRefresh < 10_000) return;
+  refreshing = true;
+  try {
+    if (hasPending()) {
+      await flush();
+      if (hasPending()) return;
+    }
+    lastRefresh = Date.now();
+    const { songs: list } = await (await api('/songs')).json();
+    // Never clobber edits that haven't reached the server yet.
+    if (dragId || hasPending() || flushing || saveTimer) return;
+
+    let next = parseData(list);
+    if (editing && !isNew) next = [...next.filter((s) => s.id !== editing.id), editing];
+    songs = sorted(next);
+
+    if (songs.length) {
+      store.set(KEYS.seeded, '1');
+    } else if (!store.get(KEYS.seeded)) {
+      // First time: bring over songs from the browser-only version, or show examples.
+      store.set(KEYS.seeded, '1');
+      const legacy = readSongs(KEYS.legacy);
+      songs = legacy.length ? legacy : exampleSongs();
+      persist([], { replace: true });
+      if (legacy.length) toast(`Brought over ${plural(legacy.length)} from this browser`);
+    }
+    render();
+    keepCopy();
+    if (!failures && !hasPending()) setSync('idle');
+  } catch {
+    if (token) setSync('offline');
+  } finally {
+    refreshing = false;
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    flushEdits();
+    flush();
+  } else {
+    refresh();
+  }
+});
+window.addEventListener('focus', refresh);
+window.addEventListener('online', () => {
+  flush();
+  refresh();
+});
 
 // ---------- Changing songs ----------
 
@@ -212,22 +387,31 @@ function setList(song, list) {
   song.list = list;
 }
 
-// where: 'top' of the list, 'end' of the list, or { before: id }.
+// Gives the song a position in its list: 'top', 'end', or { before: id }.
+// Positions are numbers, so a song can slot between two others without renumbering.
 function place(song, where) {
-  let i = -1;
-  if (where === 'top') i = songs.findIndex((s) => s.list === song.list);
-  else if (where && where.before) i = songs.findIndex((s) => s.id === where.before);
-  songs.splice(i < 0 ? songs.length : i, 0, song);
+  const others = songs.filter((s) => s.list === song.list && s.id !== song.id);
+  const first = others[0];
+  const last = others[others.length - 1];
+  let i = where && where.before ? others.findIndex((s) => s.id === where.before) : -1;
+  if (where === 'top') i = 0;
+
+  if (!others.length) song.position = 0;
+  else if (i === 0) song.position = first.position - 1;
+  else if (i > 0) song.position = (others[i - 1].position + others[i].position) / 2;
+  else song.position = last.position + 1;
+
+  if (!songs.includes(song)) songs.push(song);
+  sorted(songs);
 }
 
 function moveSong(id, list, where = 'top') {
-  const i = songs.findIndex((s) => s.id === id);
-  if (i < 0) return;
-  const [song] = songs.splice(i, 1);
+  const song = findSong(id);
+  if (!song) return;
   const changed = song.list !== list;
   setList(song, list);
   place(song, where);
-  save();
+  persist([id]);
   enterId = id;
   render();
   if (changed) toast(list === 'learned' ? `“${song.title}” learned. Nice.` : `Moved to ${listName(list)}`);
@@ -290,10 +474,7 @@ function render() {
   enterId = null;
 
   const learned = songs.filter((s) => s.list === 'learned').length;
-  $('summary').textContent = songs.length
-    ? `${songs.length} song${songs.length === 1 ? '' : 's'} · ${learned} learned`
-    : 'No songs yet';
-
+  $('summary').textContent = songs.length ? `${plural(songs.length)} · ${learned} learned` : 'No songs yet';
   $('examples-banner').hidden = demo || !songs.some((s) => s.example);
 }
 
@@ -524,6 +705,7 @@ const f = {
 let editing = null;   // the song in the sheet (a draft when adding)
 let isNew = false;
 let saveTimer = 0;
+let saveId = null;
 
 // Build the list picker and difficulty dots once.
 for (const L of LISTS) {
@@ -615,6 +797,7 @@ function chooseList(id) {
   if (isNew) {
     editing.list = id;
   } else {
+    flushEdits();
     moveSong(editing.id, id, 'top');
     paintDates();
   }
@@ -656,26 +839,26 @@ for (const k of ['chords', 'tutorial']) {
 }
 
 function queueSave(showSaved = false) {
-  if (isNew) return;
+  if (isNew || !editing) return;
+  saveId = editing.id;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    saveTimer = 0;
-    save();
-    render();
+    flushEdits();
     if (showSaved) {
       $('saved').textContent = 'Saved';
       $('saved').classList.add('show');
       clearTimeout(queueSave.hide);
       queueSave.hide = setTimeout(() => $('saved').classList.remove('show'), 1600);
     }
-  }, 300);
+  }, 400);
 }
 
-function flushSave() {
+// Sends any edit still waiting in the typing debounce.
+function flushEdits() {
   if (!saveTimer) return;
   clearTimeout(saveTimer);
   saveTimer = 0;
-  save();
+  persist([saveId], { delay: 600 });
   render();
 }
 
@@ -693,7 +876,7 @@ form.addEventListener('submit', (e) => {
     const song = normalize({ ...editing, title });
     if (song.list === 'learned') song.learned = today();
     place(song, 'top');
-    save();
+    persist([song.id]);
     enterId = song.id;
     isNew = false;
     editing = song;
@@ -709,10 +892,10 @@ $('cancel-btn').addEventListener('click', () => closeDialog(sheetEl()));
 $('delete-btn').addEventListener('click', async () => {
   const s = editing;
   if (!s || !(await ask(`Delete “${s.title}”? This can’t be undone.`, 'Delete'))) return;
-  songs = songs.filter((x) => x.id !== s.id);
   clearTimeout(saveTimer);
   saveTimer = 0;
-  save();
+  songs = songs.filter((x) => x.id !== s.id);
+  persist([s.id]);
   editing = null;
   render();
   closeDialog(sheetEl());
@@ -720,7 +903,7 @@ $('delete-btn').addEventListener('click', async () => {
 });
 
 sheetEl().addEventListener('close', () => {
-  flushSave();
+  flushEdits();
   const id = !isNew && editing ? editing.id : null;
   editing = null;
   isNew = false;
@@ -782,7 +965,7 @@ $('export-btn').addEventListener('click', () => {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  toast(`Exported ${songs.length} song${songs.length === 1 ? '' : 's'}`);
+  toast(`Exported ${plural(songs.length)}`);
 });
 
 $('import-btn').addEventListener('click', () => $('import-file').click());
@@ -799,30 +982,29 @@ $('import-file').addEventListener('change', async (e) => {
   }
   if (!incoming.length) return toast('No songs found in that file.');
   const ok = !songs.length || (await ask(
-    `Replace your ${songs.length} song${songs.length === 1 ? '' : 's'} with the ${incoming.length} in “${file.name}”?`,
+    `Replace your ${plural(songs.length)} with the ${incoming.length} in “${file.name}”?`,
     'Replace',
   ));
   if (!ok) return;
   songs = incoming;
-  save();
+  persist([], { replace: true });
   render();
-  toast(`Imported ${incoming.length} song${incoming.length === 1 ? '' : 's'}`);
+  toast(`Imported ${plural(incoming.length)}`);
 });
 
-async function clearExamples() {
+$('clear-examples-banner').addEventListener('click', async () => {
   const n = songs.filter((s) => s.example).length;
   if (!(await ask(`Remove the ${n} example songs?`, 'Clear'))) return;
   songs = songs.filter((s) => !s.example);
-  save();
+  persist([], { replace: true });
   render();
   toast('Examples cleared. It’s all yours.');
-}
-$('clear-examples-banner').addEventListener('click', clearExamples);
+});
 
 $('reset-demo-btn').addEventListener('click', async () => {
   if (!(await ask('Reset the demo to its example songs?', 'Reset'))) return;
   songs = exampleSongs();
-  save();
+  persist();
   render();
 });
 
@@ -858,10 +1040,10 @@ function exampleSongs() {
       key: 'G', tuning: 'Standard', difficulty: 2, added: today(70), learned: today(21),
       notes: 'Intro riff is solid. Don’t rush the hammer-ons on the G.',
     },
-  ].map((s) => normalize({ ...s, id: newId(), example: true }));
+  ].map((s, i) => normalize({ ...s, id: newId(), example: true }, i));
 }
 
-// ---------- Login / lock / demo ----------
+// ---------- Sign in / lock / demo ----------
 
 function showLogin() {
   document.querySelectorAll('dialog[open]').forEach((d) => d.close());
@@ -877,9 +1059,13 @@ function showApp() {
   $('app').hidden = false;
   query = $('search').value = '';
   buildBoard();
-  const loaded = load();
-  songs = loaded.songs;
-  if (loaded.fresh) save();
+
+  if (demo) {
+    songs = store.get(KEYS.demo) ? readSongs(KEYS.demo) : exampleSongs();
+  } else {
+    songs = readSongs(KEYS.cache);
+    restorePending();
+  }
 
   $('demo-pill').hidden = !demo;
   $('info-btn').hidden = !demo;
@@ -887,21 +1073,43 @@ function showApp() {
   $('lock-btn').title = demo ? 'Leave the demo' : 'Lock';
   $('lock-btn').setAttribute('aria-label', $('lock-btn').title);
   document.title = demo ? 'Songbook · Demo' : 'Songbook';
+  setSync(hasPending() ? 'saving' : 'idle');
   render();
 
-  if (demo && !store.get(KEYS.seen)) setTimeout(() => openDialog($('info')), 600);
+  if (demo) {
+    keepCopy();
+    if (!store.get(KEYS.seen)) setTimeout(() => openDialog($('info')), 600);
+  } else {
+    lastRefresh = 0;
+    refresh();
+  }
 }
 
-$('lock-btn').addEventListener('click', () => {
-  flushSave();
+// Forget the sign-in and this device's copy (the server keeps everything).
+function signOut() {
+  token = null;
+  editing = null;
+  lastRefresh = 0;
+  dirty.clear();
+  removed.clear();
+  replaceAll = false;
+  clearTimeout(flushTimer);
+  songs = [];
+  [KEYS.token, KEYS.cache, KEYS.pending].forEach((k) => store.set(k, null));
+  showLogin();
+}
+
+$('lock-btn').addEventListener('click', async () => {
   if (demo) {
     demo = false;
     store.set(KEYS.mode, null);
     history.replaceState(null, '', location.pathname);
-  } else {
-    store.set(KEYS.unlocked, null);
+    return showLogin();
   }
-  showLogin();
+  flushEdits();
+  await flush();
+  if (hasPending() && !(await ask('Some changes haven’t reached the server yet. Lock anyway and lose them?', 'Lock'))) return;
+  signOut();
 });
 
 $('demo-btn').addEventListener('click', () => {
@@ -911,37 +1119,38 @@ $('demo-btn').addEventListener('click', () => {
   showApp();
 });
 
-async function sha256(value) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
-  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
 $('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
+  const button = e.target.querySelector('button');
   const error = $('login-error');
+  button.disabled = true;
   error.textContent = '';
-  if (!window.crypto?.subtle) {
-    error.textContent = 'This page needs https to unlock.';
-    return;
-  }
-  if ((await sha256($('password').value)) === PASSWORD_SHA256) {
-    store.set(KEYS.unlocked, '1');
+  try {
+    const res = await fetch(`${API}/songs/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: $('password').value }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Could not sign in.');
+    token = data.token;
+    store.set(KEYS.token, token);
     store.set(KEYS.mode, null);
     demo = false;
     history.replaceState(null, '', location.pathname);
     showApp();
-    return;
+  } catch (err) {
+    error.textContent = err.message === 'Failed to fetch' ? 'Can’t reach the Songbook right now.' : err.message;
+    const row = e.target.querySelector('.login-row');
+    row.classList.remove('shake');
+    void row.offsetWidth;
+    row.classList.add('shake');
+    $('password').select();
+  } finally {
+    button.disabled = false;
   }
-  error.textContent = 'Not quite. Try again.';
-  const row = e.target.querySelector('.login-row');
-  row.classList.remove('shake');
-  void row.offsetWidth;
-  row.classList.add('shake');
-  $('password').select();
 });
 
 // ---------- Start ----------
 
-const unlocked = store.get(KEYS.unlocked) === '1';
-demo = !unlocked && (location.hash === '#demo' || store.get(KEYS.mode) === 'demo');
-unlocked || demo ? showApp() : showLogin();
+token || demo ? showApp() : showLogin();

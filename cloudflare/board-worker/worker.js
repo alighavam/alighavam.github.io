@@ -1,6 +1,9 @@
 /**
- * Storage + password gate for the paper board (alighavam.com/board/).
- * Data lives in D1. Secrets (never in GitHub): BOARD_PASSWORD, SESSION_SECRET
+ * Storage + password gate for the paper board (alighavam.com/board/)
+ * and the Songbook (alighavam.com/songs/).
+ * Data lives in D1. Secrets (never in GitHub): BOARD_PASSWORD, SESSION_SECRET,
+ * and optionally SONGS_PASSWORD (the Songbook uses BOARD_PASSWORD when it's unset).
+ * Tokens are scoped: a board token can't read songs, and the other way round.
  */
 
 const SESSION_DAYS = 180;
@@ -25,6 +28,13 @@ const SCHEMA = [
      type TEXT NOT NULL,
      data BLOB NOT NULL,
      created_at INTEGER NOT NULL
+   )`,
+  // One row per song; `data` is the song as JSON (see cleanSong).
+  `CREATE TABLE IF NOT EXISTS songs (
+     id TEXT PRIMARY KEY,
+     position REAL NOT NULL,
+     data TEXT NOT NULL,
+     updated_at INTEGER NOT NULL
    )`,
   `CREATE TABLE IF NOT EXISTS login_failures (ip TEXT NOT NULL, at INTEGER NOT NULL)`,
   `CREATE INDEX IF NOT EXISTS login_failures_ip ON login_failures (ip, at)`,
@@ -64,10 +74,14 @@ async function route(request, env, url) {
   const method = request.method;
 
   if (pathname === '/login' && method === 'POST') {
-    return login(request, env);
+    return login(request, env, 'board');
   }
 
-  if (!(await isAuthorized(request, env))) {
+  if (pathname.startsWith('/songs')) {
+    return songsRoute(request, env, pathname, method);
+  }
+
+  if (!(await isAuthorized(request, env, 'board'))) {
     return json({ error: 'Unauthorized' }, 401);
   }
 
@@ -95,9 +109,10 @@ async function route(request, env, url) {
 
 // ---------- Auth ----------
 
-async function login(request, env) {
-  if (!env.BOARD_PASSWORD || !env.SESSION_SECRET) {
-    return json({ error: 'Board is not configured yet.' }, 500);
+async function login(request, env, scope) {
+  const expected = scope === 'songs' ? env.SONGS_PASSWORD || env.BOARD_PASSWORD : env.BOARD_PASSWORD;
+  if (!expected || !env.SESSION_SECRET) {
+    return json({ error: 'Not configured yet.' }, 500);
   }
 
   const ip = request.headers.get('CF-Connecting-IP') || 'local';
@@ -110,7 +125,7 @@ async function login(request, env) {
   }
 
   const { password } = await request.json().catch(() => ({}));
-  if (typeof password !== 'string' || !(await safeEqual(password, env.BOARD_PASSWORD))) {
+  if (typeof password !== 'string' || !(await safeEqual(password, expected))) {
     await env.DB.batch([
       env.DB.prepare('INSERT INTO login_failures (ip, at) VALUES (?, ?)').bind(ip, Date.now()),
       env.DB.prepare('DELETE FROM login_failures WHERE at < ?').bind(since),
@@ -119,17 +134,27 @@ async function login(request, env) {
   }
 
   const expires = String(Date.now() + SESSION_DAYS * 86_400_000);
-  return json({ token: `${expires}.${await sign(expires, env.SESSION_SECRET)}` });
+  return json({ token: `${expires}.${await sign(signedPart(scope, expires), env.SESSION_SECRET)}` });
 }
 
-async function isAuthorized(request, env) {
+// Board tokens sign just the expiry (so existing sessions stay valid); others add their scope.
+function signedPart(scope, expires) {
+  return scope === 'board' ? expires : `${scope}:${expires}`;
+}
+
+async function isAuthorized(request, env, scope) {
   const header = request.headers.get('Authorization') || '';
   const [expires, signature] = header.replace(/^Bearer /, '').split('.');
   if (!expires || !signature || !env.SESSION_SECRET || Number(expires) < Date.now()) {
     return false;
   }
   try {
-    return await crypto.subtle.verify('HMAC', await hmacKey(env.SESSION_SECRET), fromBase64Url(signature), encode(expires));
+    return await crypto.subtle.verify(
+      'HMAC',
+      await hmacKey(env.SESSION_SECRET),
+      fromBase64Url(signature),
+      encode(signedPart(scope, expires)),
+    );
   } catch {
     return false;
   }
@@ -210,6 +235,103 @@ function cleanCard(id, body) {
     image,
     updatedAt: Date.now(),
   };
+}
+
+// ---------- Songbook ----------
+//   POST   /songs/login   password → 180-day songs token
+//   GET    /songs         all songs, in order
+//   PUT    /songs/:id     create / update a song
+//   DELETE /songs/:id     delete a song
+//   PUT    /songs         replace every song (import, clear examples)
+
+const LISTS = ['want', 'practicing', 'learned'];
+const MAX_SONGS = 5000;
+
+async function songsRoute(request, env, pathname, method) {
+  if (pathname === '/songs/login' && method === 'POST') {
+    return login(request, env, 'songs');
+  }
+  if (!(await isAuthorized(request, env, 'songs'))) {
+    return json({ error: 'Unauthorized' }, 401);
+  }
+  if (pathname === '/songs') {
+    if (method === 'GET') return getSongs(env);
+    if (method === 'PUT') return replaceSongs(request, env);
+  }
+  const match = pathname.match(/^\/songs\/([^/]+)$/);
+  if (match && ID.test(match[1])) {
+    if (method === 'PUT') return putSong(request, env, match[1]);
+    if (method === 'DELETE') return deleteSong(env, match[1]);
+  }
+  return json({ error: 'Not found' }, 404);
+}
+
+async function getSongs(env) {
+  const { results } = await env.DB.prepare('SELECT data FROM songs ORDER BY position').all();
+  return json({ songs: results.map((row) => JSON.parse(row.data)) });
+}
+
+function upsertSong(env, song) {
+  return env.DB.prepare(
+    `INSERT INTO songs (id, position, data, updated_at) VALUES (?, ?, ?, ?)
+     ON CONFLICT (id) DO UPDATE SET
+       position = excluded.position, data = excluded.data, updated_at = excluded.updated_at`,
+  ).bind(song.id, song.position, JSON.stringify(song), Date.now());
+}
+
+async function putSong(request, env, id) {
+  const song = cleanSong(id, await request.json().catch(() => null));
+  if (!song) return json({ error: 'Invalid song' }, 400);
+  await upsertSong(env, song).run();
+  return json({ song });
+}
+
+async function deleteSong(env, id) {
+  await env.DB.prepare('DELETE FROM songs WHERE id = ?').bind(id).run();
+  return json({ ok: true });
+}
+
+// All-or-nothing: D1 runs a batch as one transaction.
+async function replaceSongs(request, env) {
+  const body = await request.json().catch(() => null);
+  const list = body && Array.isArray(body.songs) ? body.songs : null;
+  if (!list || list.length > MAX_SONGS) return json({ error: 'Invalid songs' }, 400);
+  const songs = list.map((s) => s && typeof s.id === 'string' && ID.test(s.id) && cleanSong(s.id, s));
+  if (songs.some((s) => !s) || new Set(songs.map((s) => s.id)).size !== songs.length) {
+    return json({ error: 'Invalid songs' }, 400);
+  }
+  await env.DB.batch([env.DB.prepare('DELETE FROM songs'), ...songs.map((s) => upsertSong(env, s))]);
+  return json({ count: songs.length });
+}
+
+function cleanSong(id, s) {
+  if (!s || typeof s !== 'object') return null;
+  const text = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
+  const int = (v, lo, hi) => (Number.isInteger(v) && v >= lo && v <= hi ? v : null);
+  const date = (v) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+
+  const title = text(s.title, 200).trim();
+  if (!title || !LISTS.includes(s.list)) return null;
+  if (typeof s.position !== 'number' || !Number.isFinite(s.position)) return null;
+
+  const song = {
+    id,
+    title,
+    artist: text(s.artist, 200),
+    list: s.list,
+    position: s.position,
+    chords: text(s.chords, 2000),
+    tutorial: text(s.tutorial, 2000),
+    key: text(s.key, 12),
+    capo: int(s.capo, 1, 24),
+    tuning: text(s.tuning, 40),
+    difficulty: int(s.difficulty, 1, 3),
+    notes: text(s.notes, 20_000),
+    added: date(s.added),
+    learned: s.list === 'learned' ? date(s.learned) : null,
+  };
+  if (s.example === true) song.example = true;
+  return song;
 }
 
 // ---------- Images ----------

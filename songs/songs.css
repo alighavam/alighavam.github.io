@@ -216,6 +216,19 @@ button { cursor: pointer; }
   text-transform: uppercase;
 }
 
+/* Sync status: calm green when synced, pulsing while saving, amber when offline. */
+.sync {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--learned);
+  opacity: 0.6;
+  transition: background 0.4s, opacity 0.4s;
+}
+.sync[data-state='saving'] { background: var(--muted); opacity: 1; animation: pulse 1.2s ease-in-out infinite; }
+.sync[data-state='offline'] { background: var(--want); opacity: 1; }
+@keyframes pulse { 50% { opacity: 0.25; } }
+
 .search {
   position: relative;
   display: flex;
