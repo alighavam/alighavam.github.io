@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="dark light">
-    <meta name="description" content="Research tools by Ali Ghavampour: MyCite, a local-first reference manager, and Paper Assembly Line, a board that tracks every paper from idea to submitted.">
+    <meta name="description" content="Research tools by Ali Ghavampour: MyCite, a local-first reference manager; Paper Assembly Line, a board that tracks every paper from idea to submitted; and Songbook, a tracker for the guitar songs I'm learning.">
     <title>Tools — Ali Ghavampour</title>
     <link rel="canonical" href="https://alighavam.com/tools/">
 
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://alighavam.com/tools/">
     <meta property="og:title" content="Tools — Ali Ghavampour">
-    <meta property="og:description" content="MyCite and Paper Assembly Line: small, fast tools for doing research.">
+    <meta property="og:description" content="MyCite, Paper Assembly Line and Songbook: small, fast tools I made for myself.">
     <meta name="twitter:card" content="summary">
 
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23e0a45c'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='16' font-weight='bold' text-anchor='middle' fill='%23241703'%3EA%3C/text%3E%3C/svg%3E">
@@ -51,6 +51,7 @@
             --sage:     #7fa48a;   /* board colours, taken from board.js */
             --blue:     #6e9cc4;
             --clay:     #c9805f;
+            --ochre:    #d1a35c;   /* Songbook */
 
             --ease:     cubic-bezier(0.22, 1, 0.36, 1);
             --font:     "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -71,6 +72,7 @@
             --btn-bg:   #09090b;
             --btn-ink:  #fafafa;
             --cite:     #a8733f;
+            --ochre:    #9a6e2e;
             color-scheme: light;
         }
 
@@ -167,6 +169,7 @@
             animation: rise 0.8s var(--ease) both;
         }
         .tool:nth-child(2) { --accent: var(--sage); animation-delay: 0.08s; }
+        .tool:nth-child(3) { --accent: var(--ochre); animation-delay: 0.16s; }
         .tool:hover { border-color: var(--line-hi); transform: translateY(-3px); }
 
         /* Cursor spotlight; --x/--y are set by the script at the bottom. */
@@ -345,6 +348,17 @@
             animation: travel 8s var(--ease) infinite;
         }
 
+        /* --- Songbook preview: a song moving from want to learned ------------ */
+        .line.three { grid-template-columns: repeat(3, 1fr); }
+        .paper.song-a { --c: var(--ochre); }
+        .paper.song-b { --c: var(--clay); }
+        .paper.song-c { --c: var(--sage); }
+        .song-mover {
+            width: calc((100% - 32px - 16px) / 3 - 14px);
+            --c: var(--ochre);
+            animation: travel3 7s var(--ease) infinite;
+        }
+
         /* --- Footer ---------------------------------------------------------- */
         .foot {
             display: flex;
@@ -379,6 +393,15 @@
             75%, 92%  { transform: translateX(calc(300% + 66px)); opacity: 1; }
             97%       { transform: translateX(calc(300% + 66px)); opacity: 0; }
             98%       { transform: translateX(0); opacity: 0; }
+            100%      { transform: translateX(0); opacity: 1; }
+        }
+        /* Same hop maths as travel, over three columns. */
+        @keyframes travel3 {
+            0%, 18%   { transform: translateX(0); }
+            32%, 52%  { transform: translateX(calc(100% + 22px)); border-left-color: var(--clay); }
+            66%, 90%  { transform: translateX(calc(200% + 44px)); border-left-color: var(--sage); opacity: 1; }
+            96%       { transform: translateX(calc(200% + 44px)); opacity: 0; }
+            97%       { transform: translateX(0); opacity: 0; }
             100%      { transform: translateX(0); opacity: 1; }
         }
 
@@ -469,6 +492,34 @@
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
                         </a>
                         <a class="btn btn-ghost" href="../board/">Sign in</a>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Songbook -->
+            <article class="tool">
+                <div class="preview" aria-hidden="true">
+                    <div class="line three">
+                        <div class="col"><b>Want to Learn</b><span class="paper song-a"></span></div>
+                        <div class="col"><b>Practicing</b><span class="paper song-b"></span></div>
+                        <div class="col"><b>Learned</b><span class="paper song-c"></span></div>
+                    </div>
+                    <span class="paper mover song-mover"></span>
+                </div>
+                <div class="body">
+                    <h2 class="name"><span class="mark"></span>Songbook</h2>
+                    <p class="tagline">Remember every song you're learning on guitar.</p>
+                    <p class="desc">Three lists: want to learn, practicing, learned. Each song keeps its chords, a favourite tutorial, and notes on the tricky bars, so I stop forgetting what I was working on.</p>
+                    <ul class="chips">
+                        <li>guitar</li>
+                        <li>saved in your browser</li>
+                    </ul>
+                    <div class="actions">
+                        <a class="btn btn-primary" href="../songs/#demo">
+                            Try the demo
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        </a>
+                        <a class="btn btn-ghost" href="../songs/">Sign in</a>
                     </div>
                 </div>
             </article>
