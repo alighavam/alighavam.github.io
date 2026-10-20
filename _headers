@@ -1,0 +1,8 @@
+# Cloudflare Pages headers (https://developers.cloudflare.com/pages/configuration/headers/)
+
+# Keep the *.pages.dev copies out of search results so Google only indexes alighavam.com.
+https://:project.pages.dev/*
+  X-Robots-Tag: noindex
+
+https://:version.:project.pages.dev/*
+  X-Robots-Tag: noindex
