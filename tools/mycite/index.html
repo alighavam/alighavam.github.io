@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark light">
+    <meta name="description" content="MyCite is a free, local-first reference manager inspired by Paperpile. Your library lives in your browser and syncs through your own Google Drive: no accounts, no servers, no lock-in.">
+    <title>MyCite — a free, local-first reference manager</title>
+    <link rel="canonical" href="https://alighavam.com/tools/mycite/">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://alighavam.com/tools/mycite/">
+    <meta property="og:title" content="MyCite — a free, local-first reference manager">
+    <meta property="og:description" content="Paperpile-inspired, but free. Your library lives in your browser and syncs through your own Google Drive.">
+    <meta name="twitter:card" content="summary">
+
+    <!-- Tells Google this page is about a free web app, and who made it. -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "WebApplication",
+                "name": "MyCite",
+                "url": "https://alighavam.com/mycite/",
+                "description": "A free, local-first reference manager. Your library lives in your browser and syncs through your own Google Drive.",
+                "applicationCategory": "ReferenceApplication",
+                "operatingSystem": "Any (web browser)",
+                "browserRequirements": "Requires a modern web browser",
+                "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+                "author": { "@type": "Person", "name": "Ali Ghavampour", "url": "https://alighavam.com/" }
+            },
+            {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    { "@type": "ListItem", "position": 1, "name": "Ali Ghavampour", "item": "https://alighavam.com/" },
+                    { "@type": "ListItem", "position": 2, "name": "Tools", "item": "https://alighavam.com/tools/" },
+                    { "@type": "ListItem", "position": 3, "name": "MyCite", "item": "https://alighavam.com/tools/mycite/" }
+                ]
+            }
+        ]
+    }
+    </script>
+
+    <link rel="icon" type="image/svg+xml" href="/mycite/favicon.svg">
+
+    <!-- Follow the theme picked on the main site; otherwise the system setting. -->
+    <script>
+        (function () {
+            var saved = null;
+            try { saved = localStorage.getItem('theme'); } catch (e) {}
+            var prefersLight = window.matchMedia &&
+                window.matchMedia('(prefers-color-scheme: light)').matches;
+            document.documentElement.dataset.theme = saved || (prefersLight ? 'light' : 'dark');
+        })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* Same tokens and grain as ../index.html (the Tools page), in MyCite's paper tone. */
+        :root {
+            --bg:       #09090b;
+            --card:     rgba(255, 255, 255, 0.025);
+            --line:     rgba(255, 255, 255, 0.09);
+            --line-hi:  rgba(255, 255, 255, 0.2);
+            --text:     #fafafa;
+            --muted:    #a1a1aa;
+            --faint:    #71717a;
+            --chip:     rgba(255, 255, 255, 0.06);
+            --well:     rgba(255, 255, 255, 0.03);
+            --skel:     rgba(255, 255, 255, 0.09);
+            --btn-bg:   #fafafa;
+            --btn-ink:  #09090b;
+            --accent:   #e3b98a;   /* MyCite's warm paper tone */
+
+            --ease:     cubic-bezier(0.22, 1, 0.36, 1);
+            --font:     "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --mono:     "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+            color-scheme: dark;
+        }
+        :root[data-theme="light"] {
+            --bg:       #fafafa;
+            --card:     rgba(255, 255, 255, 0.7);
+            --line:     rgba(0, 0, 0, 0.09);
+            --line-hi:  rgba(0, 0, 0, 0.22);
+            --text:     #09090b;
+            --muted:    #52525b;
+            --faint:    #71717a;
+            --chip:     rgba(0, 0, 0, 0.05);
+            --well:     rgba(0, 0, 0, 0.025);
+            --skel:     rgba(0, 0, 0, 0.08);
+            --btn-bg:   #09090b;
+            --btn-ink:  #fafafa;
+            --accent:   #a8733f;
+            color-scheme: light;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 16px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 -0.5'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)'/%3E%3C/svg%3E");
+            background-size: 100px;
+            opacity: 0.23;
+        }
+        :root[data-theme="light"] body::before { filter: invert(1); }
+
+        a { color: inherit; text-decoration: none; }
+        p a, li a, dd a { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line-hi); }
+        p a:hover, li a:hover, dd a:hover { text-decoration-color: var(--accent); }
+
+        .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+
+        /* --- Top bar --------------------------------------------------------- */
+        .bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            font-family: var(--mono);
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+        .back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.4rem 0.7rem 0.4rem 0.55rem;
+            margin-left: -0.55rem;
+            border-radius: 999px;
+            transition: color 0.2s, background 0.2s;
+        }
+        .back svg { transition: transform 0.3s var(--ease); }
+        .back:hover { color: var(--text); background: var(--chip); }
+        .back:hover svg { transform: translateX(-3px); }
+        .path { color: var(--faint); }
+
+        /* --- Hero ------------------------------------------------------------ */
+        .hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+            gap: 3rem;
+            align-items: center;
+            padding: 4rem 0 4.5rem;
+        }
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            margin: 0 0 1.1rem;
+            font-family: var(--mono);
+            font-size: 0.8rem;
+            color: var(--accent);
+        }
+        .eyebrow img { width: 22px; height: 22px; border-radius: 6px; }
+        h1 {
+            margin: 0 0 1rem;
+            font-size: clamp(2.2rem, 5.4vw, 3.5rem);
+            line-height: 1.04;
+            letter-spacing: -0.045em;
+            font-weight: 600;
+        }
+        h1 em { font-style: normal; color: var(--accent); }
+        .lede { max-width: 32rem; margin: 0 0 1.75rem; font-size: 1.12rem; color: var(--muted); }
+
+        .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            height: 44px;
+            padding: 0 1.15rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: transform 0.25s var(--ease), background 0.2s, border-color 0.2s, box-shadow 0.3s;
+        }
+        .btn svg { transition: transform 0.3s var(--ease); }
+        .btn:hover svg { transform: translateX(3px); }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary { background: var(--btn-bg); color: var(--btn-ink); }
+        .btn-primary:hover { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 30%, transparent); }
+        .btn-ghost { border: 1px solid var(--line); color: var(--text); }
+        .btn-ghost:hover { border-color: var(--line-hi); background: var(--chip); }
+        .btn:focus-visible, .back:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .note { margin: 0.9rem 0 0; font-family: var(--mono); font-size: 0.75rem; color: var(--faint); }
+
+        /* Hero illustration: a small library with a citation being formatted. */
+        .shot {
+            position: relative;
+            padding: 14px;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: var(--card);
+            animation: rise 0.8s var(--ease) both;
+        }
+        .shot-top {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 4px 12px;
+        }
+        .shot-top i { width: 9px; height: 9px; border-radius: 50%; background: var(--skel); }
+        .shot-top span { margin-left: auto; font-family: var(--mono); font-size: 0.68rem; color: var(--faint); }
+        .lib { display: grid; gap: 8px; }
+        .ref {
+            display: grid;
+            grid-template-columns: 26px 1fr auto;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 11px;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            background: var(--well);
+            animation: scan 6s var(--ease) infinite;
+        }
+        .ref:nth-child(2) { animation-delay: 2s; }
+        .ref:nth-child(3) { animation-delay: 4s; }
+        .ref .pdf {
+            height: 30px;
+            border-radius: 4px;
+            background: color-mix(in srgb, var(--accent) 22%, transparent);
+            border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+        }
+        .ref .lines { display: grid; gap: 6px; }
+        .ref .lines i { display: block; height: 6px; border-radius: 3px; background: var(--skel); }
+        .ref .lines i:first-child { width: 85%; }
+        .ref .lines i:last-child { width: 50%; opacity: 0.6; }
+        .ref .year { font-family: var(--mono); font-size: 0.66rem; color: var(--faint); }
+        .cite {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 9px;
+            border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+            font-family: var(--mono);
+            font-size: 0.74rem;
+            color: var(--muted);
+        }
+        .cite b { color: var(--accent); font-weight: 500; }
+        .sync {
+            position: absolute;
+            right: 16px; top: -13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.25rem 0.6rem 0.25rem 0.45rem;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: var(--bg);
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            color: var(--muted);
+        }
+        .sync svg { color: var(--accent); animation: spin 3s linear infinite; }
+
+        /* --- Sections -------------------------------------------------------- */
+        section { padding: 3.5rem 0; border-top: 1px solid var(--line); }
+        h2 {
+            margin: 0 0 0.5rem;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            letter-spacing: -0.03em;
+            font-weight: 600;
+        }
+        .sub { max-width: 40rem; margin: 0 0 2rem; color: var(--muted); }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .features li {
+            padding: 1.3rem 1.35rem 1.4rem;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: var(--card);
+        }
+        .features h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            margin: 0 0 0.45rem;
+            font-size: 1.02rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+        .features h3::before {
+            content: "";
+            width: 8px; height: 8px;
+            border-radius: 2px;
+            background: var(--accent);
+        }
+        .features p { margin: 0; font-size: 0.94rem; color: var(--muted); }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            counter-reset: step;
+        }
+        .steps li { counter-increment: step; }
+        .steps li::before {
+            content: "0" counter(step);
+            display: block;
+            margin-bottom: 0.5rem;
+            font-family: var(--mono);
+            font-size: 0.8rem;
+            color: var(--accent);
+        }
+        .steps h3 { margin: 0 0 0.35rem; font-size: 1.02rem; font-weight: 600; }
+        .steps p { margin: 0; font-size: 0.94rem; color: var(--muted); }
+
+        .privacy {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 2.5rem;
+        }
+        .privacy ul { margin: 0; padding-left: 1.1rem; color: var(--muted); }
+        .privacy li { margin-bottom: 0.6rem; }
+        .privacy li::marker { color: var(--accent); }
+
+        .faq dl { margin: 0; }
+        .faq dt {
+            margin: 0;
+            padding-top: 1.2rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+        .faq dd {
+            max-width: 46rem;
+            margin: 0.35rem 0 0;
+            padding-bottom: 1.2rem;
+            border-bottom: 1px solid var(--line);
+            color: var(--muted);
+        }
+        .faq dd:last-child { border-bottom: 0; }
+
+        .cta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.25rem;
+        }
+        .cta h2 { margin: 0; }
+
+        /* --- Footer ---------------------------------------------------------- */
+        .foot {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 1.5rem 0 2.5rem;
+            border-top: 1px solid var(--line);
+            font-family: var(--mono);
+            font-size: 0.78rem;
+            color: var(--faint);
+        }
+        .foot a:hover { color: var(--text); }
+
+        /* --- Motion ---------------------------------------------------------- */
+        @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes scan {
+            0%, 30%, 100% { border-color: var(--line); transform: none; }
+            8%, 22% {
+                border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+                transform: translateX(4px);
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation: none !important; transition: none !important; }
+        }
+
+        @media (max-width: 860px) {
+            .hero { grid-template-columns: 1fr; gap: 2.5rem; padding: 2.5rem 0 3.5rem; }
+            .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .steps { grid-template-columns: 1fr; gap: 1.5rem; }
+            .privacy { grid-template-columns: 1fr; gap: 1rem; }
+        }
+        @media (max-width: 560px) {
+            .features { grid-template-columns: 1fr; }
+            section { padding: 2.75rem 0; }
+        }
+    </style>
+
+    <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "cf1b63c6e6d4436e96618b4b5f270d7c"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+
+    <div class="wrap">
+        <nav class="bar">
+            <a href="../" class="back">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+                tools
+            </a>
+            <span class="path">~/tools/mycite</span>
+        </nav>
+
+        <header class="hero">
+            <div>
+                <p class="eyebrow"><img src="/mycite/favicon.svg" alt="" width="22" height="22">MyCite</p>
+                <h1>A reference manager that's <em>free</em>, private, and yours.</h1>
+                <p class="lede">MyCite is a local-first reference manager inspired by Paperpile. Your papers, PDFs and notes live in your browser and sync through your own Google Drive. There are no accounts to make, no servers holding your library, and nothing to pay.</p>
+                <div class="actions">
+                    <a class="btn btn-primary" href="/mycite/">
+                        Open MyCite
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                    </a>
+                    <a class="btn btn-ghost" href="#how">How it works</a>
+                </div>
+                <p class="note">runs in your browser · no sign-up · works offline</p>
+            </div>
+
+            <div class="shot" aria-hidden="true">
+                <span class="sync">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2"/><path d="M18.5 2v4h-4M5.5 22v-4h4"/></svg>
+                    synced to your Drive
+                </span>
+                <div class="shot-top"><i></i><i></i><i></i><span>MyCite Library</span></div>
+                <div class="lib">
+                    <div class="ref"><span class="pdf"></span><span class="lines"><i></i><i></i></span><span class="year">2026</span></div>
+                    <div class="ref"><span class="pdf"></span><span class="lines"><i></i><i></i></span><span class="year">2024</span></div>
+                    <div class="ref"><span class="pdf"></span><span class="lines"><i></i><i></i></span><span class="year">2019</span></div>
+                </div>
+                <div class="cite"><b>\citep{</b>smith2024 → (Smith et al., 2024)</div>
+            </div>
+        </header>
+
+        <main>
+            <section id="features" aria-labelledby="features-h">
+                <h2 id="features-h">Everything you need to keep track of papers</h2>
+                <p class="sub">MyCite covers what most researchers use a reference manager for, from collecting papers to citing them in a manuscript.</p>
+                <ul class="features">
+                    <li>
+                        <h3>Add papers in seconds</h3>
+                        <p>Paste a DOI and MyCite fills in the details from Crossref. Drop in PDFs, or add a paper straight from a journal page with the browser extension.</p>
+                    </li>
+                    <li>
+                        <h3>Read and annotate PDFs</h3>
+                        <p>A built-in PDF reader (the same PDF.js engine Firefox uses). Highlights, comments and drawings are saved into the PDF itself, so they open in any other reader too.</p>
+                    </li>
+                    <li>
+                        <h3>Folders, labels and stars</h3>
+                        <p>Organise your library the way you think about it, and find any paper again with search.</p>
+                    </li>
+                    <li>
+                        <h3>Any citation style</h3>
+                        <p>Search and install any of the more than 10,000 CSL styles, including APA, MLA, Chicago, Nature and IEEE, with a live example before you pick one.</p>
+                    </li>
+                    <li>
+                        <h3>Cite in Google Docs</h3>
+                        <p>With the MyCite extension, type <code>\citep{</code> in a Google Doc, pick papers from the autocomplete, and format or update every citation in one click. The extension is in testing and not on the Chrome Web Store yet.</p>
+                    </li>
+                    <li>
+                        <h3>Easy in, easy out</h3>
+                        <p>Import from BibTeX, RIS or CSL-JSON, so moving over from Paperpile, Zotero or Mendeley is quick. Your Drive folder always holds a BibTeX file you can take anywhere.</p>
+                    </li>
+                </ul>
+            </section>
+
+            <section id="how" aria-labelledby="how-h">
+                <h2 id="how-h">How it works</h2>
+                <p class="sub">MyCite is a web app with no backend for your library. Everything happens in your browser.</p>
+                <ol class="steps">
+                    <li>
+                        <h3>Open it</h3>
+                        <p>Go to <a href="/mycite/">alighavam.com/mycite</a>. You can start adding papers straight away, and install it as an app from Chrome or Edge if you like.</p>
+                    </li>
+                    <li>
+                        <h3>Connect Google Drive</h3>
+                        <p>One click creates a <code>MyCite Library</code> folder in your Drive. Your library and PDFs are mirrored there, so every computer you use sees the same library.</p>
+                    </li>
+                    <li>
+                        <h3>Read, organise, cite</h3>
+                        <p>Add papers, annotate PDFs, and cite them in your writing. Changes sync in the background and the app keeps working offline.</p>
+                    </li>
+                </ol>
+            </section>
+
+            <section id="privacy" aria-labelledby="privacy-h">
+                <div class="privacy">
+                    <div>
+                        <h2 id="privacy-h">Private by design</h2>
+                        <p class="sub">There is no MyCite database. Your library is stored in your browser and in your own Google Drive, and nowhere else.</p>
+                    </div>
+                    <ul>
+                        <li>MyCite asks only for Google's <code>drive.file</code> permission, so it can see the files it created and nothing else in your Drive.</li>
+                        <li>No analytics or tracking inside the app.</li>
+                        <li>Disconnecting Drive revokes MyCite's access at Google.</li>
+                        <li>Read the full <a href="/mycite/privacy.html">privacy policy</a>.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="faq" class="faq" aria-labelledby="faq-h">
+                <h2 id="faq-h">Questions</h2>
+                <dl>
+                    <dt>Is MyCite really free?</dt>
+                    <dd>Yes. There is no paid plan. MyCite has no servers to pay for, because your library is stored in your own browser and Google Drive.</dd>
+
+                    <dt>Do I need to make an account?</dt>
+                    <dd>No. You can use MyCite without signing in to anything. Connecting Google Drive is optional and only needed to sync between computers and keep a backup.</dd>
+
+                    <dt>How is it different from Paperpile, Zotero or Mendeley?</dt>
+                    <dd>It works like Paperpile, in the browser and backed by Google Drive, but it's free and your data is never on someone else's server. Unlike Zotero there is nothing to install, and you can still export to Zotero at any time.</dd>
+
+                    <dt>What happens to my library if I stop using MyCite?</dt>
+                    <dd>Nothing is lost. The <code>MyCite Library</code> folder in your Drive holds every PDF and a <code>library.bib</code> file that Zotero, JabRef and other reference managers can import.</dd>
+
+                    <dt>Does it work offline?</dt>
+                    <dd>Yes. The library lives in your browser, so you can read and organise papers without a connection. It syncs the next time you're online.</dd>
+                </dl>
+            </section>
+
+            <section aria-label="Get started">
+                <div class="cta">
+                    <h2>Try it with your next paper.</h2>
+                    <a class="btn btn-primary" href="/mycite/">
+                        Open MyCite
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                    </a>
+                </div>
+            </section>
+        </main>
+
+        <footer class="foot">
+            <span>made by <a href="/">Ali Ghavampour</a></span>
+            <a href="../">← all tools</a>
+        </footer>
+    </div>
+</body>
+</html>
