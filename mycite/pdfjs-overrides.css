@@ -1,0 +1,41 @@
+/*
+ * MyCite overrides for the vendored PDF.js viewer (public/pdfjs/, kept
+ * untouched so it can be re-vendored). Loaded by the reader via a <link>: the
+ * viewer's CSP allows same-origin stylesheets but no inline <style>.
+ *
+ * Tool options on hover. PDF.js keeps a tool's options panel (highlight colour
+ * and thickness, text size, pen settings) open for as long as the tool is
+ * active, so it sits over the page while you work. Here the panel stays hidden
+ * while you use the tool and appears when you point at the tool's button (or
+ * the panel itself) — when you'd want to change a setting. A short delay
+ * before hiding lets the pointer cross the gap from the button to the panel.
+ * Keyboard focus keeps it open too. Touch screens can't hover, so they keep
+ * PDF.js's own behaviour.
+ *
+ * (A thin options strip under the toolbar was tried as well; it kept a row
+ * of the page covered the whole time a tool was active.)
+ */
+@media (hover: hover) {
+  :is(#editorHighlightParamsToolbar, #editorFreeTextParamsToolbar, #editorInkParamsToolbar):not(
+    .hidden
+  ) {
+    opacity: 0;
+    visibility: hidden;
+    translate: 0 -4px;
+    transition:
+      opacity 120ms ease,
+      translate 120ms ease,
+      visibility 0s linear 260ms;
+  }
+
+  :is(#editorHighlightButton, #editorFreeTextButton, #editorInkButton):is(:hover, :focus-visible)
+    + .editorParamsToolbar:not(.hidden),
+  :is(#editorHighlightParamsToolbar, #editorFreeTextParamsToolbar, #editorInkParamsToolbar):not(
+      .hidden
+    ):is(:hover, :has(:focus-visible)) {
+    opacity: 1;
+    visibility: visible;
+    translate: 0 0;
+    transition-delay: 0s;
+  }
+}
