@@ -9813,6 +9813,35 @@ function getTempCanvas(width, height) {
   ctx.restore();
   return [canvas, ctx];
 }
+const ScrollActivity = {
+  IDLE_MS: 150,
+  last: -Infinity,
+  listening: false,
+  listen() {
+    if (this.listening) {
+      return;
+    }
+    this.listening = true;
+    const mark = () => {
+      this.last = performance.now();
+    };
+    for (const type of ["wheel", "scroll", "touchmove", "keydown"]) {
+      window.addEventListener(type, mark, {
+        capture: true,
+        passive: true
+      });
+    }
+  },
+  defer(callback) {
+    this.listen();
+    const wait = this.last + this.IDLE_MS - performance.now();
+    if (wait <= 0) {
+      return false;
+    }
+    setTimeout(callback, wait);
+    return true;
+  }
+};
 class PDFThumbnailView extends RenderableView {
   #renderingState = RenderingStates.INITIAL;
   constructor({
@@ -10079,6 +10108,9 @@ class PDFThumbnailView extends RenderableView {
       scale: DRAW_UPSCALE_FACTOR * this.scale
     });
     const renderContinueCallback = cont => {
+      if (ScrollActivity.defer(() => renderContinueCallback(cont))) {
+        return;
+      }
       if (!this.renderingQueue.isHighestPriority(this)) {
         this.renderingState = RenderingStates.PAUSED;
         this.resume = () => {
@@ -12270,6 +12302,9 @@ class BasePDFPageView extends RenderableView {
     };
   }
   #renderContinueCallback = cont => {
+    if (ScrollActivity.defer(() => this.#renderContinueCallback(cont))) {
+      return;
+    }
     this.#showCanvas?.(false);
     if (this.renderingQueue && !this.renderingQueue.isHighestPriority(this)) {
       this.renderingState = RenderingStates.PAUSED;
