@@ -10726,6 +10726,8 @@ class CanvasExtraState {
   patternStroke = false;
   fillAlpha = 1;
   strokeAlpha = 1;
+  groupAlpha = 1;
+  knockoutErase = false;
   lineWidth = 1;
   activeSMask = null;
   transferMaps = "none";
@@ -10907,6 +10909,8 @@ const EO_CLIP = {};
 class CanvasGraphics {
   static #SCALE_MATRIX = null;
   #knockoutGroupLevel = 0;
+  #groupCanvasPool = new Map();
+  #groupCanvasPoolSize = 0;
   #knockoutElementDepth = 0;
   #knockoutTempCanvasEntry = null;
   #knockoutSavedCtx = null;
@@ -11076,6 +11080,13 @@ class CanvasGraphics {
   }
   endDrawing() {
     this.#restoreInitialState();
+    for (const pool of this.#groupCanvasPool.values()) {
+      for (const entry of pool) {
+        this.canvasFactory.destroy(entry);
+      }
+    }
+    this.#groupCanvasPool.clear();
+    this.#groupCanvasPoolSize = 0;
     for (const canvas of this.smaskGroupCanvases) {
       this.canvasFactory.destroy(canvas);
     }
@@ -11333,11 +11344,11 @@ class CanvasGraphics {
           break;
         case "CA":
           this.dependencyTracker?.recordSimpleData("strokeAlpha", opIdx);
-          this.current.strokeAlpha = value;
+          this.current.strokeAlpha = value * this.current.groupAlpha;
           break;
         case "ca":
           this.dependencyTracker?.recordSimpleData("fillAlpha", opIdx);
-          this.ctx.globalAlpha = this.current.fillAlpha = value;
+          this.ctx.globalAlpha = this.current.fillAlpha = value * this.current.groupAlpha;
           break;
         case "BM":
           this.dependencyTracker?.recordSimpleData("globalCompositeOperation", opIdx);
@@ -11874,6 +11885,13 @@ class CanvasGraphics {
     const ctx = this.ctx;
     const strokeColor = this.current.strokeColor;
     ctx.globalAlpha = this.current.strokeAlpha;
+    if (this.contentVisible && this.current.knockoutErase) {
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "destination-out";
+      this.rescaleAndStroke(path, false);
+      ctx.restore();
+    }
     if (this.contentVisible) {
       if (typeof strokeColor === "object" && strokeColor?.getPattern) {
         const baseTransform = strokeColor.isModifyingCurrentTransform() ? ctx.getTransform() : null;
@@ -11931,6 +11949,13 @@ class CanvasGraphics {
         path = newPath;
       }
       needRestore = true;
+    }
+    if (this.contentVisible && intersect !== null && this.current.knockoutErase) {
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.fill(path, this.pendingEOFill ? "evenodd" : "nonzero");
+      ctx.restore();
     }
     if (this.contentVisible && intersect !== null) {
       if (this.pendingEOFill) {
@@ -12567,7 +12592,14 @@ class CanvasGraphics {
       this.current.activeSMask = null;
     }
     const currentCtx = this.ctx;
-    if ((!group.needsIsolation || !group.isolated && !group.hasSoftMask) && !group.knockout && !group.isGray && this.#knockoutGroupLevel === 0 && currentCtx.globalAlpha === 1 && currentCtx.globalCompositeOperation === "source-over" && !inSMaskMode) {
+    const groupAlpha = currentCtx.globalAlpha;
+    const plainBlending = !group.needsIsolation && !group.smask && !group.isGray && this.#knockoutGroupLevel === 0 && currentCtx.globalCompositeOperation === "source-over" && !inSMaskMode;
+    const eraseKnockout = plainBlending && group.knockout && group.simplePaints;
+    if ((!group.needsIsolation || !group.isolated && !group.hasSoftMask) && !group.knockout && !group.isGray && this.#knockoutGroupLevel === 0 && (groupAlpha === 1 || group.singlePaint && plainBlending && this.current.knockoutErase) && currentCtx.globalCompositeOperation === "source-over" && !inSMaskMode) {
+      if (groupAlpha !== 1) {
+        this.current.groupAlpha = groupAlpha;
+        this.current.fillAlpha = this.current.strokeAlpha = groupAlpha;
+      }
       if (group.bbox) {
         let clip = new Path2D();
         const [x0, y0, x1, y1] = group.bbox;
@@ -12583,6 +12615,18 @@ class CanvasGraphics {
       this.#groupStackMeta.push(null);
       this.groupLevel++;
       return;
+    }
+    if (plainBlending && !group.isolated) {
+      group = {
+        ...group,
+        isolated: true
+      };
+    }
+    if (eraseKnockout) {
+      group = {
+        ...group,
+        knockout: false
+      };
     }
     if (!group.isolated && !group.knockout && this.#knockoutGroupLevel === 0) {
       info("TODO: Fully support non-isolated non-knockout groups.");
@@ -12605,7 +12649,11 @@ class CanvasGraphics {
     const drawnWidth = Math.max(Math.ceil(bounds[2]) - offsetX, 1);
     const drawnHeight = Math.max(Math.ceil(bounds[3]) - offsetY, 1);
     this.current.startNewPathAndClipBox([0, 0, drawnWidth, drawnHeight]);
-    const scratchCanvas = this.canvasFactory.create(drawnWidth, drawnHeight);
+    const pooledCanvas = group.smask ? undefined : this.#groupCanvasPool.get(`${drawnWidth}x${drawnHeight}`)?.pop();
+    if (pooledCanvas) {
+      this.#groupCanvasPoolSize--;
+    }
+    const scratchCanvas = pooledCanvas ?? this.canvasFactory.create(drawnWidth, drawnHeight);
     if (group.smask) {
       this.smaskGroupCanvases.push(scratchCanvas);
     }
@@ -12659,6 +12707,8 @@ class CanvasGraphics {
     copyCtxState(currentCtx, groupCtx);
     this.ctx = groupCtx;
     this.dependencyTracker?.inheritSimpleDataAsFutureForcedDependencies(["fillAlpha", "strokeAlpha", "globalCompositeOperation"]).pushBaseTransform(currentCtx);
+    this.current.groupAlpha = 1;
+    this.current.knockoutErase = eraseKnockout;
     this.setGState(opIdx, [["BM", "source-over"], ["ca", 1], ["CA", 1], ["TR", null]]);
     this.groupStack.push(currentCtx);
     this.#groupStackMeta.push({
@@ -12768,10 +12818,28 @@ class CanvasGraphics {
         this.ctx.drawImage(groupCtx.canvas, 0, 0);
       }
       this.ctx.restore();
-      this.canvasFactory.destroy({
-        canvas: groupCtx.canvas,
-        context: groupCtx
-      });
+      const {
+        width: groupWidth,
+        height: groupHeight
+      } = groupCtx.canvas;
+      if (this.#groupCanvasPoolSize < 32 && groupWidth * groupHeight <= 65536 && typeof groupCtx.reset === "function") {
+        groupCtx.reset();
+        const key = `${groupWidth}x${groupHeight}`;
+        let pool = this.#groupCanvasPool.get(key);
+        if (!pool) {
+          this.#groupCanvasPool.set(key, pool = []);
+        }
+        pool.push({
+          canvas: groupCtx.canvas,
+          context: groupCtx
+        });
+        this.#groupCanvasPoolSize++;
+      } else {
+        this.canvasFactory.destroy({
+          canvas: groupCtx.canvas,
+          context: groupCtx
+        });
+      }
       this.#destroyKnockoutPools(groupMeta);
       this.compose(dirtyBox);
     }

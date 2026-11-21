@@ -6022,7 +6022,27 @@ class OperatorList {
 class CheckedOperatorList extends OperatorList {
   needsIsolation = false;
   hasSoftMask = false;
+  paintCount = 0;
+  simplePaints = true;
   addOp(fn, args) {
+    if (this.simplePaints) {
+      if (fn === OPS.constructPath) {
+        const op = args[0];
+        if (op === OPS.fill || op === OPS.eoFill || op === OPS.stroke || op === OPS.closeStroke) {
+          this.paintCount++;
+        } else if (op !== OPS.endPath) {
+          this.simplePaints = false;
+        }
+      } else if (fn === OPS.beginGroup) {
+        const group = args[0];
+        this.paintCount += 2;
+        if (!group.singlePaint || group.needsIsolation || group.knockout || group.smask || group.isGray) {
+          this.simplePaints = false;
+        }
+      } else if (fn === OPS.shadingFill || fn === OPS.paintXObject || fn === OPS.rawFillPath || fn === OPS.beginAnnotation || fn >= OPS.showText && fn <= OPS.nextLineSetSpacingShowText || fn >= OPS.paintImageMaskXObject && fn <= OPS.paintSolidColorImageMask || (fn === OPS.setFillColorN || fn === OPS.setStrokeColorN) && args?.[0] === "TilingPattern") {
+        this.simplePaints = false;
+      }
+    }
     if (!this.needsIsolation || !this.hasSoftMask) {
       if (fn === OPS.beginGroup) {
         this.needsIsolation ||= args[0].needsIsolation;
@@ -34451,6 +34471,8 @@ class PartialEvaluator {
     if (group) {
       groupOptions.needsIsolation = newOpList.needsIsolation || !!smask;
       groupOptions.hasSoftMask = newOpList.hasSoftMask || !!smask;
+      groupOptions.simplePaints = newOpList.simplePaints;
+      groupOptions.singlePaint = newOpList.simplePaints && newOpList.paintCount <= 1;
       operatorList.addOp(OPS.beginGroup, [groupOptions]);
       operatorList.addOp(OPS.paintFormXObjectBegin, args);
       operatorList.addOpList(newOpList);
@@ -35197,7 +35219,7 @@ class PartialEvaluator {
     fallbackFontDict = null,
     prevRefs = null
   }) {
-    if (stream.isAsync) {
+    if (stream.isAsync && !(stream.stream?.length <= 4096)) {
       const bytes = await stream.asyncGetBytes();
       if (bytes) {
         stream = new Stream(bytes, 0, bytes.length, stream.dict);
